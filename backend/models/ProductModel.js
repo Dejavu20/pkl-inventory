@@ -40,12 +40,27 @@ const Products = db.define('product',{
             notEmpty: true
         }
     },
+    kategori : {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null
+    },
+    image : {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null
+    },
     userId : {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notEmpty: true,
         }
+    },
+    status: {
+        type: DataTypes.ENUM('tersedia', 'dipinjam'),
+        allowNull: false,
+        defaultValue: 'tersedia'
     }
 },{
     freezeTableName: true

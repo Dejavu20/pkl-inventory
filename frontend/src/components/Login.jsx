@@ -25,83 +25,132 @@ const Login = () => {
   };
 
   return (
-    <section className="hero is-fullheight is-fullwidth has-background-light">
-      <div className="hero-body">
-        <div className="container">
-          <div className="columns is-centered">
-            <div className="column is-4">
-              <div className="card">
-                <div className="card-content">
-                  <form onSubmit={Auth}>
-                    <div className="has-text-centered mb-4">
-                      <h1 className="title is-3 has-text-primary">Inventory System</h1>
-                      <p className="subtitle is-5">Please sign in to continue</p>
-                    </div>
-                    {isError && (
-                      <div className="notification is-danger is-light">
-                        <p className="has-text-centered">{message}</p>
-                      </div>
-                    )}
-                    <div className="field">
-                      <label className="label">Email</label>
-                      <div className="control has-icons-left">
-                        <input
-                          type="email"
-                          className="input"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Enter your email"
-                          required
-                        />
-                        <span className="icon is-small is-left">
-                          <i className="fas fa-envelope"></i>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label className="label">Password</label>
-                      <div className="control has-icons-left">
-                        <input
-                          type="password"
-                          className="input"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Enter your password"
-                          required
-                        />
-                        <span className="icon is-small is-left">
-                          <i className="fas fa-lock"></i>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="field mt-5">
-                      <button
-                        type="submit"
-                        className="button is-primary is-fullwidth is-medium"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <>
-                            <span className="icon">
-                              <i className="fas fa-spinner fa-spin"></i>
-                            </span>
-                            <span>Loading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="icon">
-                              <i className="fas fa-sign-in-alt"></i>
-                            </span>
-                            <span>Sign In</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+    <section 
+      className="hero is-fullheight" 
+      style={{
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1rem"
+      }}
+    >
+      <div className="container" style={{ width: "100%", maxWidth: "450px" }}>
+        <div className="box" style={{
+          borderRadius: "16px",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+          border: "none",
+          padding: "2.5rem 2rem"
+        }}>
+          <form onSubmit={Auth}>
+            <div className="has-text-centered mb-5">
+              <div className="icon is-large mb-4" style={{ color: "#667eea" }}>
+                <i className="fas fa-boxes fa-3x"></i>
+              </div>
+              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.5rem" }}>
+                Inventory System
+              </h1>
+              <p className="subtitle is-6 has-text-grey">
+                Silakan masuk untuk melanjutkan
+              </p>
+            </div>
+
+            {isError && (
+              <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
+                <button className="delete" onClick={() => {}}></button>
+                <p className="has-text-centered">{message}</p>
+              </div>
+            )}
+
+            <div className="field">
+              <label className="label has-text-weight-semibold">
+                Email
+              </label>
+              <div className="control has-icons-left">
+                <input
+                  type="email"
+                  className="input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Masukkan email Anda"
+                  required
+                  style={{
+                    borderRadius: "8px",
+                    border: "1px solid #e0e0e0",
+                    padding: "0.75rem 0.75rem 0.75rem 2.5rem"
+                  }}
+                />
+                <span className="icon is-small is-left" style={{ 
+                  left: "0.5rem",
+                  pointerEvents: "none",
+                  zIndex: 1
+                }}>
+                  <i className="fas fa-envelope"></i>
+                </span>
               </div>
             </div>
-          </div>
+
+            <div className="field">
+              <label className="label has-text-weight-semibold">
+                Password
+              </label>
+              <div className="control has-icons-left">
+                <input
+                  type="password"
+                  className="input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password Anda"
+                  required
+                  style={{
+                    borderRadius: "8px",
+                    border: "1px solid #e0e0e0",
+                    padding: "0.75rem 0.75rem 0.75rem 2.5rem"
+                  }}
+                />
+                <span className="icon is-small is-left" style={{ 
+                  left: "0.5rem",
+                  pointerEvents: "none",
+                  zIndex: 1
+                }}>
+                  <i className="fas fa-lock"></i>
+                </span>
+              </div>
+            </div>
+
+            <div className="field mt-5">
+              <button
+                type="submit"
+                className="button is-primary is-fullwidth"
+                disabled={isLoading}
+                style={{
+                  borderRadius: "8px",
+                  padding: "0.75rem",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none",
+                  boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)"
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="icon">
+                      <i className="fas fa-spinner fa-spin"></i>
+                    </span>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="icon">
+                      <i className="fas fa-sign-in-alt"></i>
+                    </span>
+                    <span>Masuk</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </section>

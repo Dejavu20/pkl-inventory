@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { IoPerson, IoPricetag, IoHome, IoLogOut } from "react-icons/io5";
+import { IoPerson, IoPricetag, IoHome, IoLogOut, IoBook, IoGrid, IoTime } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, reset } from "../features/authSlice";
 
@@ -36,6 +36,22 @@ const Sidebar = () => {
               Products
             </NavLink>
           </li>
+          <li>
+            <NavLink to={"/borrowings"} className="has-text-dark">
+              <span className="icon mr-2">
+                <IoBook />
+              </span>
+              Peminjaman
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to={"/borrowings/history"} className="has-text-dark">
+              <span className="icon mr-2">
+                <IoTime />
+              </span>
+              History Peminjaman
+            </NavLink>
+          </li>
         </ul>
         {user && user.role && user.role.toLowerCase() === "admin" && (
           <div>
@@ -46,7 +62,15 @@ const Sidebar = () => {
                   <span className="icon mr-2">
                     <IoPerson />
                   </span>
-                  Users
+                  Kelola User
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to={"/categories"} className="has-text-dark">
+                  <span className="icon mr-2">
+                    <IoGrid />
+                  </span>
+                  Kelola Kategori
                 </NavLink>
               </li>
             </ul>

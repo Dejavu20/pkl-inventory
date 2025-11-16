@@ -7,6 +7,10 @@ import AddUser from "./pages/AddUser";
 import EditUser from "./pages/EditUser";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
+import Borrowings from "./pages/Borrowings";
+import AddBorrowing from "./pages/AddBorrowing";
+import BorrowingHistory from "./pages/BorrowingHistory";
+import Categories from "./pages/Categories";
 import ProductDetail from "./pages/ProductDetail";
 
 function App() {
@@ -23,6 +27,10 @@ function App() {
           <Route path="/products/add" element={<AddProduct/>} />
           <Route path="/products/edit/:id" element={<EditProduct/>} />
           <Route path="/products/detail/:id" element={<ProductDetail/>} />
+          <Route path="/borrowings" element={<Borrowings/>} />
+          <Route path="/borrowings/add" element={<AddBorrowing/>} />
+          <Route path="/borrowings/history" element={<BorrowingHistory/>} />
+          <Route path="/categories" element={<Categories/>} />
         </Routes>
       </BrowserRouter>
     </div>

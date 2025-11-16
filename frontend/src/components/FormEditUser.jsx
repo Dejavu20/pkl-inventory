@@ -96,35 +96,46 @@ const FormEditUser = () => {
   }
 
   return (
-    <div className="container">
-      <div className="level">
+    <div style={{ padding: "0.75rem" }}>
+      <div className="level is-mobile mb-5">
         <div className="level-left">
           <div className="level-item">
             <div>
-              <h1 className="title">Edit User</h1>
-              <h2 className="subtitle">Update informasi user</h2>
+              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50" }}>
+                Edit User
+              </h1>
+              <h2 className="subtitle is-6 has-text-grey">
+                Update informasi user
+              </h2>
             </div>
           </div>
         </div>
         <div className="level-right">
           <div className="level-item">
-            <Link to="/users" className="button is-light">
+            <Link 
+              to="/users" 
+              className="button is-light"
+              style={{ borderRadius: "8px" }}
+            >
               <span className="icon">
                 <i className="fas fa-arrow-left"></i>
               </span>
-              <span>Kembali</span>
+              <span className="is-hidden-mobile">Kembali</span>
             </Link>
           </div>
         </div>
       </div>
 
       <div className="columns is-centered">
-        <div className="column is-half">
-          <div className="card">
-            <div className="card-content">
+        <div className="column is-full-mobile is-8-tablet is-6-desktop">
+          <div className="box" style={{
+            borderRadius: "12px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            border: "none"
+          }}>
               <form onSubmit={updateUser}>
                 {msg && (
-                  <div className="notification is-danger is-light">
+                  <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
                     <button
                       className="delete"
                       onClick={() => setMsg("")}
@@ -134,7 +145,7 @@ const FormEditUser = () => {
                 )}
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Nama <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -145,6 +156,10 @@ const FormEditUser = () => {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Masukkan nama"
                       required
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-user"></i>
@@ -153,7 +168,7 @@ const FormEditUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Email <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -164,6 +179,10 @@ const FormEditUser = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Masukkan email"
                       required
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-envelope"></i>
@@ -172,7 +191,7 @@ const FormEditUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">Password</label>
+                  <label className="label has-text-weight-semibold">Password</label>
                   <div className="control has-icons-left">
                     <input
                       type="password"
@@ -181,6 +200,10 @@ const FormEditUser = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Kosongkan jika tidak ingin mengubah password"
                       minLength="6"
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-lock"></i>
@@ -192,7 +215,7 @@ const FormEditUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">Konfirmasi Password</label>
+                  <label className="label has-text-weight-semibold">Konfirmasi Password</label>
                   <div className="control has-icons-left">
                     <input
                       type="password"
@@ -201,6 +224,10 @@ const FormEditUser = () => {
                       onChange={(e) => setConfPassword(e.target.value)}
                       placeholder="Ulangi password baru"
                       minLength="6"
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-lock"></i>
@@ -209,7 +236,7 @@ const FormEditUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Role <span className="has-text-danger">*</span>
                   </label>
                   <div className="control">
@@ -218,6 +245,10 @@ const FormEditUser = () => {
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         required
+                        style={{
+                          borderRadius: "8px",
+                          border: "1px solid #e0e0e0"
+                        }}
                       >
                         <option value="User">User</option>
                         <option value="Admin">Admin</option>
@@ -229,12 +260,13 @@ const FormEditUser = () => {
                   </p>
                 </div>
 
-                <div className="field is-grouped">
+                <div className="field is-grouped mt-5">
                   <div className="control">
                     <button
                       type="submit"
                       className="button is-primary"
                       disabled={isLoading}
+                      style={{ borderRadius: "8px" }}
                     >
                       {isLoading ? (
                         <>
@@ -254,13 +286,12 @@ const FormEditUser = () => {
                     </button>
                   </div>
                   <div className="control">
-                    <Link to="/users" className="button is-light">
+                    <Link to="/users" className="button is-light" style={{ borderRadius: "8px" }}>
                       Batal
                     </Link>
                   </div>
                 </div>
               </form>
-            </div>
           </div>
         </div>
       </div>

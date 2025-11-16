@@ -57,35 +57,46 @@ const FormAddUser = () => {
     }
   };
   return (
-    <div className="container">
-      <div className="level">
+    <div style={{ padding: "0.75rem" }}>
+      <div className="level is-mobile mb-5">
         <div className="level-left">
           <div className="level-item">
             <div>
-              <h1 className="title">Tambah User Baru</h1>
-              <h2 className="subtitle">Buat user baru untuk sistem</h2>
+              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50" }}>
+                Tambah User Baru
+              </h1>
+              <h2 className="subtitle is-6 has-text-grey">
+                Buat user baru untuk sistem
+              </h2>
             </div>
           </div>
         </div>
         <div className="level-right">
           <div className="level-item">
-            <Link to="/users" className="button is-light">
+            <Link 
+              to="/users" 
+              className="button is-light"
+              style={{ borderRadius: "8px" }}
+            >
               <span className="icon">
                 <i className="fas fa-arrow-left"></i>
               </span>
-              <span>Kembali</span>
+              <span className="is-hidden-mobile">Kembali</span>
             </Link>
           </div>
         </div>
       </div>
 
       <div className="columns is-centered">
-        <div className="column is-half">
-          <div className="card">
-            <div className="card-content">
+        <div className="column is-full-mobile is-8-tablet is-6-desktop">
+          <div className="box" style={{
+            borderRadius: "12px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            border: "none"
+          }}>
               <form onSubmit={saveUser}>
                 {msg && (
-                  <div className="notification is-danger is-light">
+                  <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
                     <button
                       className="delete"
                       onClick={() => setMsg("")}
@@ -95,7 +106,7 @@ const FormAddUser = () => {
                 )}
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Nama <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -106,6 +117,10 @@ const FormAddUser = () => {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Masukkan nama"
                       required
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-user"></i>
@@ -114,7 +129,7 @@ const FormAddUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Email <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -125,6 +140,10 @@ const FormAddUser = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Masukkan email"
                       required
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-envelope"></i>
@@ -133,7 +152,7 @@ const FormAddUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Password <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -145,6 +164,10 @@ const FormAddUser = () => {
                       placeholder="Minimal 6 karakter"
                       required
                       minLength="6"
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-lock"></i>
@@ -154,7 +177,7 @@ const FormAddUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Konfirmasi Password <span className="has-text-danger">*</span>
                   </label>
                   <div className="control has-icons-left">
@@ -166,6 +189,10 @@ const FormAddUser = () => {
                       placeholder="Ulangi password"
                       required
                       minLength="6"
+                      style={{
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0"
+                      }}
                     />
                     <span className="icon is-small is-left">
                       <i className="fas fa-lock"></i>
@@ -174,7 +201,7 @@ const FormAddUser = () => {
                 </div>
 
                 <div className="field">
-                  <label className="label">
+                  <label className="label has-text-weight-semibold">
                     Role <span className="has-text-danger">*</span>
                   </label>
                   <div className="control">
@@ -183,6 +210,10 @@ const FormAddUser = () => {
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         required
+                        style={{
+                          borderRadius: "8px",
+                          border: "1px solid #e0e0e0"
+                        }}
                       >
                         <option value="User">User</option>
                         <option value="Admin">Admin</option>
@@ -194,12 +225,13 @@ const FormAddUser = () => {
                   </p>
                 </div>
 
-                <div className="field is-grouped">
+                <div className="field is-grouped mt-5">
                   <div className="control">
                     <button
                       type="submit"
                       className="button is-primary"
                       disabled={isLoading}
+                      style={{ borderRadius: "8px" }}
                     >
                       {isLoading ? (
                         <>
@@ -219,13 +251,12 @@ const FormAddUser = () => {
                     </button>
                   </div>
                   <div className="control">
-                    <Link to="/users" className="button is-light">
+                    <Link to="/users" className="button is-light" style={{ borderRadius: "8px" }}>
                       Batal
                     </Link>
                   </div>
                 </div>
               </form>
-            </div>
           </div>
         </div>
       </div>

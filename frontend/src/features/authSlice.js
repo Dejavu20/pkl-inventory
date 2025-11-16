@@ -15,24 +15,28 @@ export const LoginUser = createAsyncThunk("user/LoginUser", async(user, thunkAPI
         const response = await axios.post(`${API_BASE_URL}/login`, {
             email: user.email,
             password: user.password
+        }, {
+            withCredentials: true // Important for session cookies
         });
         return response.data;
     } catch (error) {
         if(error.response){
-            const message = error.response.data.msg;
+            const message = error.response.data.msg || error.response.data.message || "Login gagal";
             return thunkAPI.rejectWithValue(message);
         }
-        return thunkAPI.rejectWithValue("Login failed");
+        return thunkAPI.rejectWithValue("Login failed - Tidak dapat terhubung ke server");
     }
 });
 
 export const getMe = createAsyncThunk("user/getMe", async(_, thunkAPI) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/me`);
+        const response = await axios.get(`${API_BASE_URL}/me`, {
+            withCredentials: true // Important for session cookies
+        });
         return response.data;
     } catch (error) {
         if(error.response){
-            const message = error.response.data.msg;
+            const message = error.response.data.msg || error.response.data.message || "Gagal mendapatkan data user";
             return thunkAPI.rejectWithValue(message);
         }
         return thunkAPI.rejectWithValue("Failed to get user data");
@@ -40,7 +44,9 @@ export const getMe = createAsyncThunk("user/getMe", async(_, thunkAPI) => {
 });
 
 export const LogOut = createAsyncThunk("user/LogOut", async() => {
-    await axios.delete(`${API_BASE_URL}/logout`);
+    await axios.delete(`${API_BASE_URL}/logout`, {
+        withCredentials: true // Important for session cookies
+    });
 });
 
 export const authSlice = createSlice({

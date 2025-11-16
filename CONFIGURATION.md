@@ -162,3 +162,13 @@ Session dikonfigurasi menggunakan Express Session dengan Sequelize Store. Pastik
 - Database akan di-sync otomatis saat server pertama kali dijalankan
 - Session table akan dibuat otomatis oleh Sequelize Store
 
+
+
+
+
+
+
+
+
+
+

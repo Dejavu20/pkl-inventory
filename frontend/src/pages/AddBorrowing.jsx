@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import Layout from "./Layout";
-import ProductList from "../components/ProductList";
+import FormAddBorrowing from "../components/FormAddBorrowing";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getMe } from "../features/authSlice";
 
-const Products = () => {
+const AddBorrowing = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isError } = useSelector((state) => state.auth);
@@ -22,11 +22,9 @@ const Products = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "0.5rem" }}>
-        <ProductList />
-      </div>
+      <FormAddBorrowing />
     </Layout>
   );
 };
 
-export default Products;
+export default AddBorrowing;

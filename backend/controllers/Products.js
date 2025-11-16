@@ -1,35 +1,141 @@
 import Product from "../models/ProductModel.js";
 import User from "../models/UserModel.js";
+import Borrowing from "../models/BorrowingModel.js";
 import {Op} from "sequelize";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 
+// Get dashboard statistics
+export const getDashboardStats = async(req, res) => {
+    try {
+        // Count total products
+        const totalProducts = await Product.count();
+        
+        // Count total users
+        const totalUsers = await User.count({
+            where: {
+                role: 'User'
+            }
+        });
+        
+        // Count total admins
+        const totalAdmins = await User.count({
+            where: {
+                role: 'Admin'
+            }
+        });
+        
+        res.status(200).json({
+            totalProducts,
+            totalUsers,
+            totalAdmins
+        });
+    } catch (error) {
+        res.status(500).json({msg: error.message || "Gagal memuat statistik"});
+    }
+}
+
 export const getProducts = async (req, res) =>{
     try {
-        let response;
-        if(req.role && req.role.toLowerCase() === "admin"){
-            response = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }],
-                order: [['createdAt', 'DESC']]
-            });
-        }else{
-            response = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
-                where:{
-                    userId: req.userId
-                },
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }],
-                order: [['createdAt', 'DESC']]
+        // Get filter parameters from query
+        const { kategori, search, includeBorrowed } = req.query;
+        
+        // Build where clause
+        const whereClause = {};
+        if (kategori && kategori !== 'all' && kategori !== '') {
+            whereClause.kategori = kategori;
+        }
+        if (search && search.trim() !== '') {
+            whereClause[Op.or] = [
+                { name: { [Op.like]: `%${search.trim()}%` } },
+                { merek: { [Op.like]: `%${search.trim()}%` } },
+                { serialNumber: { [Op.like]: `%${search.trim()}%` } }
+            ];
+        }
+        
+        // Get all products
+        const allProducts = await Product.findAll({
+            attributes:['id','uuid','name','merek','serialNumber','kategori','image','status','createdAt','updatedAt'],
+            where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+            include:[{
+                model: User,
+                attributes:['name','email']
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+        
+        // Get active borrowings (dipinjam, terlambat)
+        const activeBorrowings = await Borrowing.findAll({
+            where: {
+                status: {
+                    [Op.in]: ['dipinjam', 'terlambat']
+                }
+            },
+            attributes: ['productId']
+        });
+        
+        // Get list of product IDs that are currently borrowed
+        const borrowedProductIds = new Set(activeBorrowings.map(b => b.productId));
+        
+        // Sinkronisasi status produk berdasarkan borrowing aktif
+        const productsToUpdateTersedia = [];
+        const productsToUpdateDipinjam = [];
+        
+        for (const product of allProducts) {
+            const hasActiveBorrowing = borrowedProductIds.has(product.id);
+            
+            // Normalisasi status: jika null/undefined/kosong, set ke 'tersedia'
+            if (!product.status || product.status === null || product.status === undefined || product.status === '') {
+                product.status = 'tersedia';
+                productsToUpdateTersedia.push(product.id);
+            }
+            
+            // Sinkronisasi: jika ada borrowing aktif tapi status produk bukan 'dipinjam', update
+            if (hasActiveBorrowing && product.status !== 'dipinjam') {
+                productsToUpdateDipinjam.push(product.id);
+                product.status = 'dipinjam';
+            } else if (!hasActiveBorrowing && product.status === 'dipinjam') {
+                // Jika tidak ada borrowing aktif tapi status masih 'dipinjam', update ke 'tersedia'
+                productsToUpdateTersedia.push(product.id);
+                product.status = 'tersedia';
+            }
+        }
+        
+        // Bulk update status produk
+        if (productsToUpdateTersedia.length > 0) {
+            await Product.update(
+                { status: 'tersedia' },
+                { where: { id: { [Op.in]: productsToUpdateTersedia } } }
+            );
+        }
+        if (productsToUpdateDipinjam.length > 0) {
+            await Product.update(
+                { status: 'dipinjam' },
+                { where: { id: { [Op.in]: productsToUpdateDipinjam } } }
+            );
+        }
+        
+        // Filter out borrowed products unless includeBorrowed is true
+        let response = allProducts;
+        if (includeBorrowed !== 'true') {
+            response = allProducts.filter(product => {
+                const status = product.status;
+                // Hanya tampilkan produk dengan status 'tersedia' atau null/undefined
+                return status === 'tersedia' || !status || status === null || status === undefined || status === '';
             });
         }
-        res.status(200).json(response);
+        
+        // Remove 'id' from response attributes (only needed for filtering)
+        const finalResponse = response.map(product => {
+            const { id, ...productData } = product.toJSON();
+            // Pastikan status selalu ada
+            if (!productData.status) {
+                productData.status = 'tersedia';
+            }
+            return productData;
+        });
+        
+        res.status(200).json(finalResponse);
     } catch (error) {
         res.status(500).json({msg: error.message});
     }
@@ -43,30 +149,19 @@ export const getProductById = async(req, res) =>{
             }
         });
         if(!product) return res.status(404).json({msg: "Data tidak ditemukan"});
-        let response;
-        if(req.role && req.role.toLowerCase() === "admin"){
-            response = await Product.findOne({
-                attributes:['uuid','name','merek','serialNumber'],
-                where:{
-                    id: product.id
-                },
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }]
-            });
-        }else{
-            response = await Product.findOne({
-                attributes:['uuid','name','merek','serialNumber'],
-                where:{
-                    [Op.and]:[{id: product.id}, {userId: req.userId}]
-                },
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }]
-            });
-        }
+        
+        // All users can see all products now
+        const response = await Product.findOne({
+            attributes:['uuid','name','merek','serialNumber','kategori','image'],
+            where:{
+                id: product.id
+            },
+            include:[{
+                model: User,
+                attributes:['name','email']
+            }]
+        });
+        
         res.status(200).json(response);
     } catch (error) {
         res.status(500).json({msg: error.message});
@@ -89,8 +184,8 @@ const generateSerialNumber = () => {
 };
 
 export const createProduct = async(req, res) =>{
-    // Mendapatkan name dan merek dari request body (serialNumber auto-generated)
-    const {name, merek} = req.body;
+    // Mendapatkan name, merek, kategori, dan image dari request body (serialNumber auto-generated)
+    const {name, merek, kategori, image} = req.body;
     
     // Validasi input
     if(!name || !merek) {
@@ -131,6 +226,8 @@ export const createProduct = async(req, res) =>{
         const product = await Product.create({
             name: name.trim(),
             merek: merek.trim(),
+            kategori: kategori ? kategori.trim() : null,
+            image: image || null,
             serialNumber: serialNumber, 
             userId: req.userId
         });
@@ -178,7 +275,7 @@ export const updateProduct = async(req, res) =>{
         });
         if(!product) return res.status(404).json({msg: "Data tidak ditemukan"});
         
-        const {name, merek} = req.body;
+        const {name, merek, kategori, image} = req.body;
         
         // Validasi input
         if(!name || !merek) {
@@ -193,26 +290,21 @@ export const updateProduct = async(req, res) =>{
             return res.status(400).json({msg: "Nama produk maksimal 100 karakter"});
         }
         
-        if(req.role && req.role.toLowerCase() === "admin"){
-            await Product.update({
-                name: name.trim(),
-                merek: merek.trim()
-            },{
-                where:{
-                    id: product.id
-                }
-            });
-        }else{
-            if(req.userId !== product.userId) return res.status(403).json({msg: "Akses terlarang"});
-            await Product.update({
-                name: name.trim(),
-                merek: merek.trim()
-            },{
-                where:{
-                    [Op.and]:[{id: product.id}, {userId: req.userId}]
-                }
-            });
+        // All users can update products (admin can update any, user can update their own)
+        if(req.role && req.role.toLowerCase() !== "admin" && req.userId !== product.userId) {
+            return res.status(403).json({msg: "Akses terlarang"});
         }
+        
+        await Product.update({
+            name: name.trim(),
+            merek: merek.trim(),
+            kategori: kategori ? kategori.trim() : null,
+            image: image !== undefined ? (image || null) : product.image
+        },{
+            where:{
+                id: product.id
+            }
+        });
         res.status(200).json({msg: "Produk berhasil diupdate"});
     } catch (error) {
         // Handle validation errors
@@ -279,7 +371,7 @@ export const getProductQRCode = async(req, res) => {
             where: {
                 uuid: req.params.id
             },
-            attributes: ['id', 'uuid', 'name', 'merek', 'serialNumber', 'userId']
+            attributes: ['id', 'uuid', 'name', 'merek', 'serialNumber', 'image', 'userId']
         });
         
         if(!product) {
@@ -320,6 +412,9 @@ export const getProductQRCode = async(req, res) => {
     }
 }
 
+// Store for QR scan events (in-memory, bisa diganti dengan Redis untuk production)
+const qrScanEvents = new Map();
+
 // Get product detail (public, untuk QR code scan)
 export const getProductDetail = async(req, res) => {
     try {
@@ -327,7 +422,7 @@ export const getProductDetail = async(req, res) => {
             where: {
                 uuid: req.params.id
             },
-            attributes: ['uuid', 'name', 'merek', 'serialNumber'],
+            attributes: ['uuid', 'name', 'merek', 'serialNumber', 'image', 'kategori', 'status', 'createdAt', 'updatedAt'],
             include:[{
                 model: User,
                 attributes:['name','email']
@@ -338,9 +433,62 @@ export const getProductDetail = async(req, res) => {
             return res.status(404).json({msg: "Produk tidak ditemukan"});
         }
         
-        res.status(200).json(product);
+        // Check if product is currently borrowed
+        const activeBorrowing = await Borrowing.findOne({
+            where: {
+                productId: product.id,
+                status: {
+                    [Op.in]: ['dipinjam', 'terlambat']
+                }
+            },
+            attributes: ['uuid', 'namaPeminjam', 'borrowDate', 'expectedReturnDate', 'status'],
+            order: [['borrowDate', 'DESC']]
+        });
+        
+        // Record QR scan event
+        const scanEvent = {
+            productUuid: product.uuid,
+            productName: product.name,
+            productMerek: product.merek,
+            productSerialNumber: product.serialNumber,
+            scannedAt: new Date().toISOString(),
+            userAgent: req.headers['user-agent'] || 'Unknown',
+            ip: req.ip || req.connection.remoteAddress
+        };
+        
+        // Store scan event (keep last 100 events)
+        const eventId = Date.now().toString();
+        qrScanEvents.set(eventId, scanEvent);
+        
+        // Clean old events (keep only last 100)
+        if (qrScanEvents.size > 100) {
+            const firstKey = qrScanEvents.keys().next().value;
+            qrScanEvents.delete(firstKey);
+        }
+        
+        // Prepare response with additional info
+        const productData = product.toJSON();
+        productData.activeBorrowing = activeBorrowing ? activeBorrowing.toJSON() : null;
+        
+        res.status(200).json(productData);
     } catch (error) {
         res.status(500).json({msg: error.message || "Gagal memuat data produk"});
+    }
+}
+
+// Get recent QR scan events
+export const getQRScanEvents = async(req, res) => {
+    try {
+        // Get events from last 5 minutes
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const recentEvents = Array.from(qrScanEvents.entries())
+            .map(([id, event]) => ({ id, ...event }))
+            .filter(event => event.scannedAt >= fiveMinutesAgo)
+            .sort((a, b) => new Date(b.scannedAt) - new Date(a.scannedAt));
+        
+        res.status(200).json(recentEvents);
+    } catch (error) {
+        res.status(500).json({msg: error.message || "Gagal memuat event scan"});
     }
 }
 
@@ -351,7 +499,7 @@ export const getProductHistory = async(req, res) => {
         if(req.role && req.role.toLowerCase() === "admin"){
             // Admin bisa lihat semua history
             response = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
+                attributes:['uuid','name','merek','serialNumber','kategori','image','createdAt','updatedAt'],
                 include:[{
                     model: User,
                     attributes:['name','email','role']
@@ -360,12 +508,9 @@ export const getProductHistory = async(req, res) => {
                 limit: 50 // Limit 50 terakhir
             });
         }else{
-            // User hanya bisa lihat history mereka sendiri
+            // All users can see all history now
             response = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
-                where:{
-                    userId: req.userId
-                },
+                attributes:['uuid','name','merek','serialNumber','kategori','image','createdAt','updatedAt'],
                 include:[{
                     model: User,
                     attributes:['name','email','role']
@@ -379,6 +524,7 @@ export const getProductHistory = async(req, res) => {
         const history = response.map(product => ({
             productName: product.name,
             merek: product.merek,
+            kategori: product.kategori,
             serialNumber: product.serialNumber,
             createdBy: product.user.name,
             createdByEmail: product.user.email,
@@ -395,31 +541,15 @@ export const getProductHistory = async(req, res) => {
 // Export products to CSV
 export const exportProductsToCSV = async(req, res) => {
     try {
-        let products;
-        if(req.role && req.role.toLowerCase() === "admin"){
-            // Admin bisa export semua produk
-            products = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }],
-                order: [['createdAt', 'DESC']]
-            });
-        }else{
-            // User hanya bisa export produk mereka sendiri
-            products = await Product.findAll({
-                attributes:['uuid','name','merek','serialNumber','createdAt','updatedAt'],
-                where:{
-                    userId: req.userId
-                },
-                include:[{
-                    model: User,
-                    attributes:['name','email']
-                }],
-                order: [['createdAt', 'DESC']]
-            });
-        }
+        // All users can export all products
+        const products = await Product.findAll({
+            attributes:['uuid','name','merek','serialNumber','kategori','image','createdAt','updatedAt'],
+            include:[{
+                model: User,
+                attributes:['name','email']
+            }],
+            order: [['createdAt', 'DESC']]
+        });
         
         // Helper function to escape CSV fields
         const escapeCSV = (field) => {
@@ -447,12 +577,13 @@ export const exportProductsToCSV = async(req, res) => {
         };
         
         // Convert to CSV format
-        const csvHeader = 'No,Nama Produk,Merek,Serial Number,Dibuat Oleh,Email,Dibuat Pada,Diupdate Pada\n';
+        const csvHeader = 'No,Nama Produk,Merek,Kategori,Serial Number,Dibuat Oleh,Email,Dibuat Pada,Diupdate Pada\n';
         const csvRows = products.map((product, index) => {
             const row = [
                 index + 1,
                 product.name,
                 product.merek,
+                product.kategori || '-',
                 product.serialNumber,
                 product.user ? product.user.name : '-',
                 product.user ? product.user.email : '-',
