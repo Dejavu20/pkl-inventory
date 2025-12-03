@@ -209,17 +209,3 @@ ISC
 ## Author
 
 Inventory Management System
-
-
-
-
-
-
-
-
-
-
-
-
-
-
