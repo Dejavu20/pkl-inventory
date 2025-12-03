@@ -3,6 +3,46 @@ import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
 import ConfirmModal from "./ConfirmModal";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Alert,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  InputAdornment,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Avatar,
+  Stack,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Download as DownloadIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon,
+  QrCode as QrCodeIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Info as InfoIcon,
+  Close as CloseIcon,
+  Inventory as InventoryIcon,
+} from "@mui/icons-material";
 
 const ProductList = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -25,84 +65,93 @@ const ProductList = () => {
   const [success, setSuccess] = useState("");
   const location = useLocation();
 
-  const getCategories = async () => {
+  const getCategories = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/categories`);
       setCategories(response.data || []);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
-  };
+  }, []);
 
-  // Filter products when filter criteria change
   useEffect(() => {
     if (allProducts.length === 0) return;
-    
-    let filtered = allProducts.filter(product => {
+
+    let filtered = allProducts.filter((product) => {
       const status = product.status;
-      if (status === 'dipinjam') {
+      if (status === "dipinjam") {
         return false;
       }
-      return status === 'tersedia' || !status || status === null || status === undefined || status === '';
+      return (
+        status === "tersedia" ||
+        !status ||
+        status === null ||
+        status === undefined ||
+        status === ""
+      );
     });
 
-    // Filter by kategori
     if (selectedKategori && selectedKategori !== "all") {
-      filtered = filtered.filter(product => 
-        product.kategori && product.kategori.toLowerCase() === selectedKategori.toLowerCase()
+      filtered = filtered.filter(
+        (product) =>
+          product.kategori &&
+          product.kategori.toLowerCase() === selectedKategori.toLowerCase()
       );
     }
 
-    // Filter by search term
     if (searchTerm && searchTerm.trim() !== "") {
       const search = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(product =>
-        (product.name && product.name.toLowerCase().includes(search)) ||
-        (product.merek && product.merek.toLowerCase().includes(search)) ||
-        (product.serialNumber && product.serialNumber.toLowerCase().includes(search)) ||
-        (product.kategori && product.kategori.toLowerCase().includes(search))
+      filtered = filtered.filter(
+        (product) =>
+          (product.name && product.name.toLowerCase().includes(search)) ||
+          (product.merek && product.merek.toLowerCase().includes(search)) ||
+          (product.serialNumber &&
+            product.serialNumber.toLowerCase().includes(search)) ||
+          (product.kategori && product.kategori.toLowerCase().includes(search))
       );
     }
 
     setProducts(filtered);
   }, [allProducts, selectedKategori, searchTerm]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const getProducts = useCallback(async () => {
     const startTime = Date.now();
-    const minLoadingTime = 800; // Reduced minimum loading time untuk mengurangi blink
-    
+    const minLoadingTime = 800;
+
     try {
       setIsLoadingProducts(true);
       const response = await axios.get(`${API_BASE_URL}/products`);
-      const productsWithStatus = response.data.map(product => {
+      const productsWithStatus = response.data.map((product) => {
         let normalizedStatus = product.status;
-        if (!normalizedStatus || normalizedStatus === null || normalizedStatus === undefined || normalizedStatus === '') {
-          normalizedStatus = 'tersedia';
+        if (
+          !normalizedStatus ||
+          normalizedStatus === null ||
+          normalizedStatus === undefined ||
+          normalizedStatus === ""
+        ) {
+          normalizedStatus = "tersedia";
         }
         return {
           ...product,
-          status: normalizedStatus
+          status: normalizedStatus,
         };
       });
-      
-      // Set data sekaligus untuk menghindari blink
+
       setAllProducts(productsWithStatus);
-      
-      // Filter akan otomatis di-trigger oleh useEffect yang mendengarkan allProducts
-      
-      // Ensure minimum loading time
+
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } catch (error) {
       console.error("Failed to fetch products:", error);
-      
-      // Ensure minimum loading time even on error
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } finally {
       setIsLoadingProducts(false);
@@ -111,15 +160,13 @@ const ProductList = () => {
 
   useEffect(() => {
     getCategories();
-  }, []);
+  }, [getCategories]);
 
-  // Load products only once on mount and when location changes
   useEffect(() => {
     if (location.pathname === "/products") {
       getProducts();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]); // Removed getProducts from deps to prevent multiple calls
+  }, [location.pathname, getProducts]);
 
   const openDeleteConfirm = (product) => {
     setProductToDelete(product);
@@ -133,11 +180,11 @@ const ProductList = () => {
 
   const confirmDelete = async () => {
     if (!productToDelete) return;
-    
+
     try {
       setIsDeleting(true);
       await axios.delete(`${API_BASE_URL}/products/${productToDelete.uuid}`, {
-        withCredentials: true
+        withCredentials: true,
       });
       closeDeleteConfirm();
       getProducts();
@@ -158,7 +205,9 @@ const ProductList = () => {
     try {
       setIsLoadingQR(true);
       setSelectedProduct(product);
-      const response = await axios.get(`${API_BASE_URL}/products/${product.uuid}/qrcode`);
+      const response = await axios.get(
+        `${API_BASE_URL}/products/${product.uuid}/qrcode`
+      );
       setQrCodeData(response.data);
       setShowQRModal(true);
     } catch (error) {
@@ -182,8 +231,8 @@ const ProductList = () => {
 
   const downloadQRCode = () => {
     if (!qrCodeData || !qrCodeData.qrCode || !selectedProduct) return;
-    
-    const link = document.createElement('a');
+
+    const link = document.createElement("a");
     link.href = qrCodeData.qrCode;
     link.download = `QR-${selectedProduct.name}-${selectedProduct.serialNumber}.png`;
     document.body.appendChild(link);
@@ -205,26 +254,24 @@ const ProductList = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(`${API_BASE_URL}/products/export/csv`, {
-        responseType: 'blob',
-        withCredentials: true
+        responseType: "blob",
+        withCredentials: true,
       });
-      
-      // Create blob URL
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      
-      // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = 'products.csv';
+
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = "products.csv";
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
         if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/"/g, '');
+          filename = filenameMatch[1].replace(/"/g, "");
         }
       }
-      
-      link.setAttribute('download', filename);
+
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -243,392 +290,417 @@ const ProductList = () => {
   };
 
   return (
-    <div>
+    <Box sx={{ p: 3 }}>
+      {/* Alerts */}
       {error && (
-        <div className="notification is-danger is-light" style={{ borderRadius: "8px", marginBottom: "1rem" }}>
-          <button className="delete" onClick={() => setError("")}></button>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {success && (
-        <div className="notification is-success is-light" style={{ borderRadius: "8px", marginBottom: "1rem" }}>
-          <button className="delete" onClick={() => setSuccess("")}></button>
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
           {success}
-        </div>
+        </Alert>
       )}
 
-      <div className="level" style={{ opacity: isLoadingProducts ? 0.5 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-        <div className="level-left">
-          <div>
-            <h1 className="title">Products</h1>
-            <h2 className="subtitle">List of Products</h2>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="buttons">
-            <button
-              onClick={() => setShowCSVConfirm(true)}
-              className="button is-success"
-              disabled={isLoading || isLoadingProducts || products.length === 0}
-              style={{ borderRadius: "8px" }}
-              title="Download data produk dalam format CSV"
-            >
-              <span className="icon">
-                <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-download'}`}></i>
-              </span>
-              <span className="is-hidden-mobile">Download CSV</span>
-            </button>
-            <Link 
-              to="/products/add" 
-              className="button is-primary" 
-              style={{ borderRadius: "8px" }}
-              onClick={(e) => isLoadingProducts && e.preventDefault()}
-            >
-              <span className="icon">
-                <i className="fas fa-plus"></i>
-              </span>
-              <span>Add New Product</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+          opacity: isLoadingProducts ? 0.5 : 1,
+          transition: "opacity 0.3s",
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Products
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            List of Products
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={isLoading ? <CircularProgress size={20} /> : <DownloadIcon />}
+            onClick={() => setShowCSVConfirm(true)}
+            disabled={isLoading || isLoadingProducts || products.length === 0}
+            sx={{
+              background: "linear-gradient(135deg, #48c774 0%, #3fb871 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #3fb871 0%, #2ea85a 100%)",
+              },
+            }}
+          >
+            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
+              Download CSV
+            </Box>
+          </Button>
+          <Button
+            component={Link}
+            to="/products/add"
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={isLoadingProducts}
+            sx={{
+              backgroundColor: "primary.main",
+              "&:hover": {
+                backgroundColor: "primary.dark",
+              },
+            }}
+          >
+            Add New Product
+          </Button>
+        </Stack>
+      </Box>
 
-      {/* Filter Section - Sembunyikan saat loading untuk menghindari blink */}
+      {/* Filter Section */}
       {!isLoadingProducts && allProducts.length > 0 && (
-        <div className="box mb-4" style={{
-          borderRadius: "8px",
-          border: "1px solid #e0e0e0",
-          padding: "1rem",
-          opacity: isLoadingProducts ? 0 : 1,
-          transition: 'opacity 0.3s ease-in-out'
-        }}>
-        <div className="columns is-mobile is-vcentered">
-          <div className="column is-12-mobile is-6-tablet">
-            <div className="field">
-              <label className="label is-size-7 has-text-weight-semibold">
-                <span className="icon mr-1">
-                  <i className="fas fa-filter"></i>
-                </span>
-                Filter Kategori
-              </label>
-              <div className="control">
-                <div className="select is-fullwidth">
-                  <select
-                    value={selectedKategori}
-                    onChange={(e) => setSelectedKategori(e.target.value)}
-                    style={{ borderRadius: "4px" }}
-                  >
-                    <option value="all">Semua Kategori</option>
-                    {categories.map((category) => (
-                      <option key={category.uuid} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="column is-12-mobile is-6-tablet">
-            <div className="field">
-              <label className="label is-size-7 has-text-weight-semibold">
-                <span className="icon mr-1">
-                  <i className="fas fa-search"></i>
-                </span>
-                Cari Produk
-              </label>
-              <div className="control has-icons-left">
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Cari berdasarkan nama, merek, serial..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ borderRadius: "4px" }}
-                />
-                <span className="icon is-small is-left">
-                  <i className="fas fa-search"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        {(selectedKategori !== "all" || searchTerm.trim() !== "") && (
-          <div className="notification is-info is-light mt-3">
-            <button 
-              className="delete" 
-              onClick={() => {
-                setSelectedKategori("all");
-                setSearchTerm("");
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            opacity: isLoadingProducts ? 0 : 1,
+            transition: "opacity 0.3s",
+          }}
+        >
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <FilterListIcon fontSize="small" />
+                  Filter Kategori
+                </Box>
+              </InputLabel>
+              <Select
+                value={selectedKategori}
+                onChange={(e) => setSelectedKategori(e.target.value)}
+                label="Filter Kategori"
+              >
+                <MenuItem value="all">Semua Kategori</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.uuid} value={category.name}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Cari berdasarkan nama, merek, serial..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
               }}
-            ></button>
-            <p className="is-size-7">
+            />
+          </Box>
+          {(selectedKategori !== "all" || searchTerm.trim() !== "") && (
+            <Alert
+              severity="info"
+              sx={{ mt: 2 }}
+              action={
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedKategori("all");
+                    setSearchTerm("");
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              }
+            >
               Menampilkan {products.length} dari {allProducts.length} produk
               {selectedKategori !== "all" && ` (Kategori: ${selectedKategori})`}
               {searchTerm.trim() !== "" && ` (Pencarian: "${searchTerm}")`}
-            </p>
-          </div>
-        )}
-        </div>
+            </Alert>
+          )}
+        </Paper>
       )}
 
+      {/* Loading State */}
       {isLoadingProducts ? (
-        <div className="card">
-          <div className="card-content">
-            <div className="has-text-centered py-6" style={{ minHeight: "300px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-              <span className="icon is-large mb-4">
-                <i className="fas fa-spinner fa-spin fa-3x has-text-primary"></i>
-              </span>
-              <p className="is-size-5 has-text-weight-semibold mt-3">Memuat data produk...</p>
-              <p className="is-size-7 has-text-grey mt-2">Mohon tunggu sebentar</p>
-            </div>
-          </div>
-        </div>
+        <Paper sx={{ p: 8 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress size={64} sx={{ mb: 3 }} />
+            <Typography variant="h6" fontWeight="semibold" gutterBottom>
+              Memuat data produk...
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Mohon tunggu sebentar
+            </Typography>
+          </Box>
+        </Paper>
       ) : (
-        <div className="card">
-          <div className="card-content">
-            <div className="table-container">
-              <table className="table is-striped is-hoverable is-fullwidth">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Foto</th>
-                    <th>Product Name</th>
-                    <th>Merek</th>
-                    <th>Kategori</th>
-                    <th>Serial Number</th>
-                    <th>Created By</th>
-                    <th>QR Code</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="has-text-centered has-text-grey">
-                        {allProducts.length === 0 ? "No products found" : "Tidak ada produk yang sesuai dengan filter"}
-                      </td>
-                    </tr>
-                  ) : (
-                  products.map((product, index) => (
-                    <tr key={product.uuid}>
-                      <td>{index + 1}</td>
-                      <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                        <div 
-                          className="is-flex is-align-items-center is-justify-content-center"
-                          style={{
-                            width: "64px",
-                            height: "64px",
-                            borderRadius: "8px",
-                            backgroundColor: product.image ? "transparent" : "#f5f5f5",
-                            border: "2px solid #e0e0e0",
-                            overflow: "hidden",
-                            position: "relative"
-                          }}
+        <TableContainer component={Paper} elevation={2}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "grey.100" }}>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    No
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Foto
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Product Name
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Merek
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Kategori
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Serial Number
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Created By
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    QR Code
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Actions
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {products.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {allProducts.length === 0
+                        ? "No products found"
+                        : "Tidak ada produk yang sesuai dengan filter"}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                products.map((product, index) => (
+                  <TableRow key={product.uuid} hover>
+                    <TableCell>
+                      <Typography variant="body2">{index + 1}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Avatar
+                        src={product.image}
+                        variant="rounded"
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          bgcolor: "grey.200",
+                        }}
+                      >
+                        <InventoryIcon />
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {product.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={product.merek} size="small" color="primary" />
+                    </TableCell>
+                    <TableCell>
+                      {product.kategori ? (
+                        <Chip label={product.kategori} size="small" color="info" />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        component="code"
+                        variant="caption"
+                        sx={{
+                          bgcolor: "grey.100",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                        }}
+                      >
+                        {product.serialNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {product.user?.name || "-"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="warning"
+                        size="small"
+                        onClick={() => showQRCode(product)}
+                        title="Tampilkan QR Code"
+                      >
+                        <QrCodeIcon />
+                      </IconButton>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <IconButton
+                          component={Link}
+                          to={`/products/edit/${product.uuid}`}
+                          color="primary"
+                          size="small"
                         >
-                          {product.image ? (
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              style={{
-                                objectFit: "cover",
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: "8px"
-                              }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                const fallback = e.target.parentElement.querySelector('.image-fallback');
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className="image-fallback is-flex is-align-items-center is-justify-content-center"
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: product.image ? "none" : "flex"
-                            }}
-                          >
-                            <span className="icon has-text-grey">
-                              <i className="fas fa-box fa-lg"></i>
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <strong>{product.name}</strong>
-                      </td>
-                      <td>
-                        <span className="tag is-primary">{product.merek}</span>
-                      </td>
-                      <td>
-                        {product.kategori ? (
-                          <span className="tag is-info" style={{ borderRadius: "4px" }}>
-                            {product.kategori}
-                          </span>
-                        ) : (
-                          <span className="has-text-grey">-</span>
-                        )}
-                      </td>
-                      <td>
-                        <code>{product.serialNumber}</code>
-                      </td>
-                      <td>{product.user?.name || "-"}</td>
-                      <td>
-                        <button
-                          onClick={() => showQRCode(product)}
-                          className="button is-warning is-light is-small"
-                          title="Tampilkan QR Code"
-                          style={{ borderRadius: "4px" }}
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          size="small"
+                          onClick={() => openDeleteConfirm(product)}
                         >
-                          <span className="icon is-small">
-                            <i className="fas fa-qrcode"></i>
-                          </span>
-                          <span className="is-hidden-mobile">QR</span>
-                        </button>
-                      </td>
-                      <td>
-                        <div className="buttons are-small">
-                          <Link
-                            to={`/products/edit/${product.uuid}`}
-                            className="button is-info is-small"
-                            style={{ borderRadius: "4px" }}
-                          >
-                            <span className="icon is-small">
-                              <i className="fas fa-edit"></i>
-                            </span>
-                            <span className="is-hidden-mobile">Edit</span>
-                          </Link>
-                          <button
-                            onClick={() => openDeleteConfirm(product)}
-                            className="button is-danger is-small"
-                            style={{ borderRadius: "4px" }}
-                          >
-                            <span className="icon is-small">
-                              <i className="fas fa-trash"></i>
-                            </span>
-                            <span className="is-hidden-mobile">Delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
-      {/* QR Code Modal */}
-      {showQRModal && (
-        <div className="modal is-active">
-          <div className="modal-background" onClick={closeQRModal}></div>
-          <div className="modal-card" style={{ maxWidth: "500px", borderRadius: "12px" }}>
-            <header className="modal-card-head" style={{ borderRadius: "12px 12px 0 0" }}>
-              <p className="modal-card-title">
-                <span className="icon mr-2">
-                  <i className="fas fa-qrcode"></i>
-                </span>
-                QR Code Produk
-              </p>
-              <button
-                className="delete"
-                aria-label="close"
-                onClick={closeQRModal}
-              ></button>
-            </header>
-            <section className="modal-card-body" style={{ padding: "2rem" }}>
-              {isLoadingQR ? (
-                <div className="has-text-centered">
-                  <span className="icon is-large">
-                    <i className="fas fa-spinner fa-spin fa-2x"></i>
-                  </span>
-                  <p className="mt-4">Memuat QR Code...</p>
-                </div>
-              ) : qrCodeData && selectedProduct ? (
-                <div>
-                  <div className="has-text-centered mb-4">
-                    <img
-                      src={qrCodeData.qrCode}
-                      alt="QR Code"
-                      style={{
-                        maxWidth: "300px",
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: "8px",
-                        border: "2px solid #e0e0e0"
-                      }}
-                    />
-                  </div>
-                  <div className="box" style={{ backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
-                    <div className="content is-small">
-                      <p className="mb-2">
-                        <strong>Nama Produk:</strong> {selectedProduct.name}
-                      </p>
-                      <p className="mb-2">
-                        <strong>Merek:</strong> {selectedProduct.merek}
-                      </p>
-                      <p className="mb-2">
-                        <strong>Serial Number:</strong> <code>{selectedProduct.serialNumber}</code>
-                      </p>
-                      <p className="is-size-7 has-text-grey mt-3">
-                        <i className="fas fa-info-circle mr-1"></i>
-                        Scan QR code ini untuk melihat detail produk
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </section>
-            <footer className="modal-card-foot" style={{ borderRadius: "0 0 12px 12px" }}>
-              <div className="buttons" style={{ width: "100%", flexWrap: "wrap" }}>
-                {selectedProduct && (
-                  <Link
-                    to={`/products/detail/${selectedProduct.uuid}`}
-                    className="button is-primary"
-                    onClick={closeQRModal}
-                    style={{ borderRadius: "8px", flex: 1, minWidth: "150px" }}
-                  >
-                    <span className="icon">
-                      <i className="fas fa-info-circle"></i>
-                    </span>
-                    <span>Lihat Detail Produk</span>
-                  </Link>
-                )}
-                {qrCodeData && (
-                  <button
-                    className="button is-success"
-                    onClick={openQRDownloadConfirm}
-                    style={{ borderRadius: "8px", flex: 1, minWidth: "150px" }}
-                  >
-                    <span className="icon">
-                      <i className="fas fa-download"></i>
-                    </span>
-                    <span>Download QR</span>
-                  </button>
-                )}
-                <button
-                  className="button is-light"
-                  onClick={closeQRModal}
-                  style={{ borderRadius: "8px", flex: 1, minWidth: "150px" }}
-                >
-                  <span>Tutup</span>
-                </button>
-              </div>
-            </footer>
-          </div>
-        </div>
-      )}
+      {/* QR Code Dialog */}
+      <Dialog
+        open={showQRModal}
+        onClose={closeQRModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <QrCodeIcon />
+            QR Code Produk
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {isLoadingQR ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 4 }}>
+              <CircularProgress />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Memuat QR Code...
+              </Typography>
+            </Box>
+          ) : qrCodeData && selectedProduct ? (
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                <Box
+                  component="img"
+                  src={qrCodeData.qrCode}
+                  alt="QR Code"
+                  sx={{
+                    maxWidth: 300,
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: 2,
+                    border: 2,
+                    borderColor: "divider",
+                  }}
+                />
+              </Box>
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Nama Produk:</strong> {selectedProduct.name}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Merek:</strong> {selectedProduct.merek}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Serial Number:</strong>{" "}
+                  <Box component="code" sx={{ bgcolor: "grey.200", px: 0.5, borderRadius: 0.5 }}>
+                    {selectedProduct.serialNumber}
+                  </Box>
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
+                  <InfoIcon fontSize="small" sx={{ verticalAlign: "middle", mr: 0.5 }} />
+                  Scan QR code ini untuk melihat detail produk
+                </Typography>
+              </Paper>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          {selectedProduct && (
+            <Button
+              component={Link}
+              to={`/products/detail/${selectedProduct.uuid}`}
+              onClick={closeQRModal}
+              variant="contained"
+              startIcon={<InfoIcon />}
+                sx={{
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+            >
+              Lihat Detail Produk
+            </Button>
+          )}
+          {qrCodeData && (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={openQRDownloadConfirm}
+              startIcon={<DownloadIcon />}
+            >
+              Download QR
+            </Button>
+          )}
+          <Button onClick={closeQRModal} variant="outlined">
+            Tutup
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* CSV Download Confirmation Modal */}
+      {/* CSV Download Confirmation */}
       <ConfirmModal
         isOpen={showCSVConfirm}
         onClose={() => setShowCSVConfirm(false)}
@@ -639,10 +711,9 @@ const ProductList = () => {
         cancelText="Batal"
         type="success"
         isLoading={isLoading}
-        icon="fa-download"
       />
 
-      {/* QR Download Confirmation Modal */}
+      {/* QR Download Confirmation */}
       <ConfirmModal
         isOpen={showQRDownloadConfirm}
         onClose={() => setShowQRDownloadConfirm(false)}
@@ -651,9 +722,13 @@ const ProductList = () => {
         message={
           selectedProduct ? (
             <>
-              Anda akan mengunduh QR Code untuk produk:<br />
-              <strong>{selectedProduct.name}</strong><br />
-              <span className="is-size-7 has-text-grey">Serial: {selectedProduct.serialNumber}</span>
+              Anda akan mengunduh QR Code untuk produk:
+              <br />
+              <strong>{selectedProduct.name}</strong>
+              <br />
+              <Typography variant="caption" color="text.secondary">
+                Serial: {selectedProduct.serialNumber}
+              </Typography>
             </>
           ) : (
             "Anda akan mengunduh QR Code produk ini."
@@ -662,10 +737,9 @@ const ProductList = () => {
         confirmText="Download"
         cancelText="Batal"
         type="success"
-        icon="fa-download"
       />
 
-      {/* Delete Product Confirmation Modal */}
+      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={showDeleteConfirm}
         onClose={closeDeleteConfirm}
@@ -674,10 +748,20 @@ const ProductList = () => {
         message={
           productToDelete ? (
             <>
-              Apakah Anda yakin ingin menghapus produk ini?<br />
-              <strong>{productToDelete.name}</strong><br />
-              <span className="is-size-7 has-text-grey">Serial: {productToDelete.serialNumber}</span><br />
-              <span className="tag is-danger is-small mt-2">Tindakan ini tidak dapat dibatalkan!</span>
+              Apakah Anda yakin ingin menghapus produk ini?
+              <br />
+              <strong>{productToDelete.name}</strong>
+              <br />
+              <Typography variant="caption" color="text.secondary">
+                Serial: {productToDelete.serialNumber}
+              </Typography>
+              <br />
+              <Chip
+                label="Tindakan ini tidak dapat dibatalkan!"
+                color="error"
+                size="small"
+                sx={{ mt: 1 }}
+              />
             </>
           ) : (
             "Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan!"
@@ -687,9 +771,8 @@ const ProductList = () => {
         cancelText="Batal"
         type="danger"
         isLoading={isDeleting}
-        icon="fa-trash"
       />
-    </div>
+    </Box>
   );
 };
 

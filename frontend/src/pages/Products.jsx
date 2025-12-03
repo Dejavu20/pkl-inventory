@@ -22,9 +22,7 @@ const Products = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "0.5rem" }}>
-        <ProductList />
-      </div>
+      <ProductList />
     </Layout>
   );
 };

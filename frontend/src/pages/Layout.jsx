@@ -2,55 +2,83 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import QRScanListener from "../components/QRScanListener";
+import { Box, Drawer } from "@mui/material";
+
+const drawerWidth = 256;
 
 const Layout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   return (
-    <React.Fragment>
-      <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-      <div style={{ 
-        minHeight: "100vh", 
-        backgroundColor: "#f5f7fa",
-        paddingTop: "4rem"
-      }}>
-        <div className="columns is-gapless" style={{ margin: 0, minHeight: "calc(100vh - 4rem)" }}>
-          <div className={`column is-2 is-hidden-mobile ${sidebarOpen ? 'is-hidden' : ''}`} style={{ 
-            backgroundColor: "#ffffff",
-            borderRight: "1px solid #e8e8e8",
-            padding: "1.5rem 0"
-          }}>
-            <Sidebar />
-          </div>
-          {sidebarOpen && (
-            <div 
-              className="modal is-active is-hidden-tablet" 
-              onClick={() => setSidebarOpen(false)}
-              style={{ zIndex: 1000 }}
-            >
-              <div className="modal-background"></div>
-              <div className="modal-content" style={{ width: "80%", maxWidth: "300px", margin: "4rem auto 0" }}>
-                <div className="box" style={{ padding: 0 }}>
-                  <Sidebar />
-                </div>
-              </div>
-            </div>
-          )}
-          <div 
-            className="column is-10-mobile" 
-            style={{ 
-              padding: "1.5rem 1rem",
-              minHeight: "calc(100vh - 4rem)",
-              maxWidth: "100%",
-              overflowX: "hidden"
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Navbar onMenuClick={handleDrawerToggle} />
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          mt: "64px", // AppBar height
+          backgroundColor: "background.default",
+        }}
+      >
+        {/* Desktop Sidebar */}
+        <Box
+          component="nav"
+          sx={{
+            width: { md: drawerWidth },
+            flexShrink: { md: 0 },
+            display: { xs: "none", md: "block" },
+          }}
+        >
+          <Box
+            sx={{
+              width: drawerWidth,
+              position: "fixed",
+              height: "calc(100vh - 64px)",
+              overflow: "auto",
             }}
           >
-            <main>{children}</main>
-          </div>
-        </div>
-      </div>
+            <Sidebar />
+          </Box>
+        </Box>
+
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: "block", md: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
+          }}
+        >
+          <Sidebar />
+        </Drawer>
+
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2, md: 3 },
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            overflow: "auto",
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
       <QRScanListener />
-    </React.Fragment>
+    </Box>
   );
 };
 

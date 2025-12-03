@@ -1,10 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Card,
+  CardContent,
+  Chip,
+  Button,
+  Alert,
+  CircularProgress,
+  Avatar,
+  Divider,
+} from "@mui/material";
+import {
+  Inventory as InventoryIcon,
+  Business as BusinessIcon,
+  QrCode as QrCodeIcon,
+  Category as CategoryIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Person as PersonIcon,
+  CalendarToday as CalendarIcon,
+  Home as HomeIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
+} from "@mui/icons-material";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,456 +67,513 @@ const ProductDetail = () => {
     }
   }, [id]);
 
+  const InfoCard = ({ icon, label, value, iconColor, children }) => (
+    <Card
+      sx={{
+        mb: 2,
+        borderRadius: 2,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        border: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "background.paper",
+        transition: "all 0.2s ease",
+        "&:hover": {
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        },
+      }}
+    >
+      <CardContent>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar
+            sx={{
+              width: 56,
+              height: 56,
+              bgcolor: iconColor,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            {icon}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                fontSize: "0.75rem",
+              }}
+            >
+              {label}
+            </Typography>
+            {children || (
+              <Typography
+                variant="h6"
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 500,
+                  mt: 0.5,
+                }}
+              >
+                {value}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      padding: "2rem 1rem"
-    }}>
-      <div className="container" style={{ maxWidth: "800px" }}>
-        <div className="columns is-centered">
-          <div className="column is-full-mobile is-10-tablet">
-            {isLoading ? (
-              <div className="box has-text-centered" style={{
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                border: "none"
-              }}>
-                <span className="icon is-large">
-                  <i className="fas fa-spinner fa-spin fa-2x"></i>
-                </span>
-                <p className="mt-4">Memuat informasi produk...</p>
-              </div>
-            ) : error ? (
-              <div className="box" style={{
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                border: "none"
-              }}>
-                <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
-                  <p className="title is-5">
-                    <span className="icon">
-                      <i className="fas fa-exclamation-triangle"></i>
-                    </span>
-                    Error
-                  </p>
-                  <p>{error}</p>
-                  <div className="buttons mt-4">
-                    <button 
-                      className="button is-light" 
-                      onClick={() => window.location.href = "/"}
-                      style={{ borderRadius: "8px" }}
-                    >
-                      <span className="icon">
-                        <i className="fas fa-home"></i>
-                      </span>
-                      <span>Kembali ke Home</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : product ? (
-              <div className="box" style={{
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                border: "none",
-                backgroundColor: "white"
-              }}>
-                <div className="has-text-centered mb-5">
-                  {product.image ? (
-                    <div style={{ marginBottom: "1.5rem" }}>
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        style={{
-                          maxWidth: "200px",
-                          maxHeight: "200px",
-                          borderRadius: "12px",
-                          border: "3px solid white",
-                          boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                          objectFit: "cover"
-                        }}
-                      />
-                    </div>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "background.default",
+        py: 4,
+        px: 2,
+      }}
+    >
+      <Container maxWidth="md">
+        {isLoading ? (
+          <Paper
+            sx={{
+              p: 4,
+              textAlign: "center",
+              borderRadius: 2,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            }}
+          >
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="body1" color="text.secondary">
+              Memuat informasi produk...
+            </Typography>
+          </Paper>
+        ) : error ? (
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: 2,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            }}
+          >
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                backgroundColor: "error.light",
+                color: "error.dark",
+                border: "1px solid",
+                borderColor: "error.main",
+                "& .MuiAlert-icon": {
+                  color: "error.main",
+                },
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                Error
+              </Typography>
+              <Typography variant="body2">{error}</Typography>
+            </Alert>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="contained"
+                startIcon={<HomeIcon />}
+                onClick={() => navigate("/")}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 500,
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Kembali ke Home
+              </Button>
+            </Box>
+          </Paper>
+        ) : product ? (
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: 2,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              backgroundColor: "background.paper",
+            }}
+          >
+            {/* Header */}
+            <Box sx={{ textAlign: "center", mb: 4 }}>
+              {product.image ? (
+                <Box sx={{ mb: 3 }}>
+                  <Box
+                    component="img"
+                    src={product.image}
+                    alt={product.name}
+                    sx={{
+                      maxWidth: 200,
+                      maxHeight: 200,
+                      borderRadius: 2,
+                      border: "3px solid",
+                      borderColor: "divider",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Avatar
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    mx: "auto",
+                    mb: 2,
+                    bgcolor: "primary.main",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <InventoryIcon sx={{ fontSize: 50 }} />
+                </Avatar>
+              )}
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  color: "text.primary",
+                  mb: 1,
+                }}
+              >
+                Informasi Produk
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1,
+                }}
+              >
+                <QrCodeIcon sx={{ fontSize: 18 }} />
+                Detail produk dari QR Code Scan
+              </Typography>
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Product Information */}
+            <Box>
+              <InfoCard
+                icon={<InventoryIcon />}
+                label="Nama Produk"
+                value={product.name}
+                iconColor="#667eea"
+              />
+
+              <InfoCard
+                icon={<BusinessIcon />}
+                label="Merek"
+                iconColor="#48c6ef"
+              >
+                <Chip
+                  label={product.merek}
+                  sx={{
+                    mt: 0.5,
+                    borderRadius: 1.5,
+                    backgroundColor: "#e0f2fe",
+                    color: "#0369a1",
+                    fontWeight: 500,
+                  }}
+                />
+              </InfoCard>
+
+              <InfoCard
+                icon={<QrCodeIcon />}
+                label="Serial Number"
+                iconColor="#10b981"
+              >
+                <Box
+                  component="code"
+                  sx={{
+                    display: "inline-block",
+                    mt: 0.5,
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1.5,
+                    backgroundColor: "grey.50",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    color: "text.primary",
+                    fontWeight: 600,
+                    fontSize: "1rem",
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {product.serialNumber}
+                </Box>
+              </InfoCard>
+
+              {product.kategori && (
+                <InfoCard
+                  icon={<CategoryIcon />}
+                  label="Kategori"
+                  iconColor="#8b5cf6"
+                >
+                  <Chip
+                    label={product.kategori}
+                    sx={{
+                      mt: 0.5,
+                      borderRadius: 1.5,
+                      backgroundColor: "#f3e8ff",
+                      color: "#7c3aed",
+                      fontWeight: 500,
+                    }}
+                  />
+                </InfoCard>
+              )}
+
+              <InfoCard
+                icon={
+                  product.status === "tersedia" ? (
+                    <CheckCircleIcon />
                   ) : (
-                    <div style={{ 
-                      width: "100px", 
-                      height: "100px", 
-                      borderRadius: "50%", 
-                      display: "inline-flex", 
-                      alignItems: "center", 
-                      justifyContent: "center",
-                      marginBottom: "1.5rem",
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)"
-                    }}>
-                      <span className="icon is-large has-text-white">
-                        <i className="fas fa-box fa-2x"></i>
-                      </span>
-                    </div>
-                  )}
-                  <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.5rem" }}>
-                    Informasi Produk
-                  </h1>
-                  <p className="subtitle is-6 has-text-grey">
-                    Detail produk dari QR Code Scan
-                  </p>
-                </div>
+                    <ErrorIcon />
+                  )
+                }
+                label="Status"
+                iconColor={
+                  product.status === "tersedia" ? "#10b981" : "#ef4444"
+                }
+              >
+                <Chip
+                  label={product.status === "tersedia" ? "Tersedia" : "Dipinjam"}
+                  sx={{
+                    mt: 0.5,
+                    borderRadius: 1.5,
+                    backgroundColor:
+                      product.status === "tersedia"
+                        ? "#d1fae5"
+                        : "#fee2e2",
+                    color:
+                      product.status === "tersedia"
+                        ? "#065f46"
+                        : "#991b1b",
+                    fontWeight: 500,
+                  }}
+                />
+              </InfoCard>
 
-                <div className="content">
-                  <div className="box mb-4" style={{
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                    backgroundColor: "#f8f9fa"
-                  }}>
-                    <div className="media">
-                      <div className="media-left">
-                        <div style={{
-                          width: "56px",
-                          height: "56px",
-                          borderRadius: "50%",
-                          backgroundColor: "#667eea",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <span className="icon has-text-white">
-                            <i className="fas fa-tag fa-lg"></i>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="media-content">
-                        <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                          Nama Produk
-                        </p>
-                        <p className="title is-4" style={{ color: "#2c3e50" }}>{product.name}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="box mb-4" style={{
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                    backgroundColor: "#f8f9fa"
-                  }}>
-                    <div className="media">
-                      <div className="media-left">
-                        <div style={{
-                          width: "56px",
-                          height: "56px",
-                          borderRadius: "50%",
-                          backgroundColor: "#48c6ef",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <span className="icon has-text-white">
-                            <i className="fas fa-industry fa-lg"></i>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="media-content">
-                        <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                          Merek
-                        </p>
-                        <p className="title is-5">
-                          <span className="tag is-info is-medium" style={{ borderRadius: "6px" }}>
-                            {product.merek}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="box mb-4" style={{
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                    backgroundColor: "#f8f9fa"
-                  }}>
-                    <div className="media">
-                      <div className="media-left">
-                        <div style={{
-                          width: "56px",
-                          height: "56px",
-                          borderRadius: "50%",
-                          backgroundColor: "#10b981",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <span className="icon has-text-white">
-                            <i className="fas fa-barcode fa-lg"></i>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="media-content">
-                        <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                          Serial Number
-                        </p>
-                        <p className="title is-5">
-                          <code style={{
-                            fontSize: "1.1rem",
-                            backgroundColor: "#fff",
-                            padding: "0.5rem 1rem",
-                            borderRadius: "6px",
-                            border: "1px solid #e0e0e0",
-                            color: "#2c3e50",
-                            fontWeight: "600"
-                          }}>
-                            {product.serialNumber}
-                          </code>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {product.kategori && (
-                    <div className="box mb-4" style={{
-                      borderRadius: "8px",
-                      border: "1px solid #e0e0e0",
-                      backgroundColor: "#f8f9fa"
-                    }}>
-                      <div className="media">
-                        <div className="media-left">
-                          <div style={{
-                            width: "56px",
-                            height: "56px",
-                            borderRadius: "50%",
-                            backgroundColor: "#8b5cf6",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
-                            <span className="icon has-text-white">
-                              <i className="fas fa-folder fa-lg"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="media-content">
-                          <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                            Kategori
-                          </p>
-                          <p className="title is-5">
-                            <span className="tag is-primary is-medium" style={{ borderRadius: "6px" }}>
-                              {product.kategori}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="box mb-4" style={{
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                    backgroundColor: "#f8f9fa"
-                  }}>
-                    <div className="media">
-                      <div className="media-left">
-                        <div style={{
-                          width: "56px",
-                          height: "56px",
-                          borderRadius: "50%",
-                          backgroundColor: product.status === 'tersedia' ? "#10b981" : "#ef4444",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <span className="icon has-text-white">
-                            <i className={`fas ${product.status === 'tersedia' ? 'fa-check-circle' : 'fa-exclamation-circle'} fa-lg`}></i>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="media-content">
-                        <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                          Status
-                        </p>
-                        <p className="title is-5">
-                          <span className={`tag is-medium ${product.status === 'tersedia' ? 'is-success' : 'is-danger'}`} style={{ borderRadius: "6px" }}>
-                            {product.status === 'tersedia' ? 'Tersedia' : 'Dipinjam'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {product.activeBorrowing && (
-                    <div className="box mb-4" style={{
-                      borderRadius: "8px",
-                      border: "2px solid #f59e0b",
-                      backgroundColor: "#fffbeb"
-                    }}>
-                      <div className="media">
-                        <div className="media-left">
-                          <div style={{
-                            width: "56px",
-                            height: "56px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f59e0b",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
-                            <span className="icon has-text-white">
-                              <i className="fas fa-hand-holding fa-lg"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="media-content">
-                          <p className="heading has-text-weight-semibold" style={{ color: "#92400e" }}>
-                            Status Peminjaman
-                          </p>
-                          <p className="title is-5" style={{ color: "#78350f" }}>
-                            {product.activeBorrowing.status === 'terlambat' ? (
-                              <span className="tag is-danger is-medium" style={{ borderRadius: "6px" }}>
-                                Terlambat
-                              </span>
-                            ) : (
-                              <span className="tag is-warning is-medium" style={{ borderRadius: "6px" }}>
-                                Sedang Dipinjam
-                              </span>
-                            )}
-                          </p>
-                          <div className="content is-small mt-3">
-                            <p className="mb-2">
-                              <strong>Peminjam:</strong> {product.activeBorrowing.namaPeminjam}
-                            </p>
-                            {product.activeBorrowing.borrowDate && (
-                              <p className="mb-2">
-                                <strong>Tanggal Pinjam:</strong> {new Date(product.activeBorrowing.borrowDate).toLocaleDateString('id-ID', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            )}
-                            {product.activeBorrowing.expectedReturnDate && (
-                              <p className="mb-2">
-                                <strong>Tanggal Kembali (Diharapkan):</strong> {new Date(product.activeBorrowing.expectedReturnDate).toLocaleDateString('id-ID', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {product.user && (
-                    <div className="box mb-4" style={{
-                      borderRadius: "8px",
-                      border: "1px solid #e0e0e0",
-                      backgroundColor: "#f8f9fa"
-                    }}>
-                      <div className="media">
-                        <div className="media-left">
-                          <div style={{
-                            width: "56px",
-                            height: "56px",
-                            borderRadius: "50%",
-                            backgroundColor: "#6366f1",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
-                            <span className="icon has-text-white">
-                              <i className="fas fa-user fa-lg"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="media-content">
-                          <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                            Dibuat Oleh
-                          </p>
-                          <p className="title is-5" style={{ color: "#2c3e50" }}>{product.user.name}</p>
-                          {product.user.email && (
-                            <p className="subtitle is-6 has-text-grey">{product.user.email}</p>
+              {product.activeBorrowing && (
+                <Card
+                  sx={{
+                    mb: 2,
+                    borderRadius: 2,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                    border: "1px solid",
+                    borderColor: "warning.main",
+                    backgroundColor: "warning.light",
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          bgcolor: "warning.main",
+                        }}
+                      >
+                        <ErrorIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "warning.dark",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Status Peminjaman
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Chip
+                            label={
+                              product.activeBorrowing.status === "terlambat"
+                                ? "Terlambat"
+                                : "Sedang Dipinjam"
+                            }
+                            sx={{
+                              borderRadius: 1.5,
+                              backgroundColor:
+                                product.activeBorrowing.status === "terlambat"
+                                  ? "error.light"
+                                  : "warning.light",
+                              color:
+                                product.activeBorrowing.status === "terlambat"
+                                  ? "error.dark"
+                                  : "warning.dark",
+                              fontWeight: 500,
+                              mb: 2,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "warning.dark", mb: 0.5 }}
+                          >
+                            <strong>Peminjam:</strong>{" "}
+                            {product.activeBorrowing.namaPeminjam}
+                          </Typography>
+                          {product.activeBorrowing.borrowDate && (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "warning.dark", mb: 0.5 }}
+                            >
+                              <strong>Tanggal Pinjam:</strong>{" "}
+                              {new Date(
+                                product.activeBorrowing.borrowDate
+                              ).toLocaleDateString("id-ID", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </Typography>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                          {product.activeBorrowing.expectedReturnDate && (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "warning.dark" }}
+                            >
+                              <strong>Tanggal Kembali (Diharapkan):</strong>{" "}
+                              {new Date(
+                                product.activeBorrowing.expectedReturnDate
+                              ).toLocaleDateString("id-ID", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
 
-                  {product.createdAt && (
-                    <div className="box mb-4" style={{
-                      borderRadius: "8px",
-                      border: "1px solid #e0e0e0",
-                      backgroundColor: "#f8f9fa"
-                    }}>
-                      <div className="media">
-                        <div className="media-left">
-                          <div style={{
-                            width: "56px",
-                            height: "56px",
-                            borderRadius: "50%",
-                            backgroundColor: "#6b7280",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
-                            <span className="icon has-text-white">
-                              <i className="fas fa-calendar fa-lg"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="media-content">
-                          <p className="heading has-text-weight-semibold" style={{ color: "#495057" }}>
-                            Tanggal Dibuat
-                          </p>
-                          <p className="title is-6" style={{ color: "#2c3e50" }}>
-                            {new Date(product.createdAt).toLocaleDateString('id-ID', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="notification is-success is-light mt-5" style={{ borderRadius: "8px" }}>
-                  <p className="is-size-7">
-                    <i className="fas fa-check-circle mr-2"></i>
-                    Informasi produk berhasil dimuat dari QR Code
-                  </p>
-                </div>
-
-                <div className="buttons is-centered mt-5">
-                  <button 
-                    className="button is-primary" 
-                    onClick={() => window.location.href = "/"}
-                    style={{
-                      borderRadius: "8px",
-                      padding: "0.75rem 2rem",
-                      fontSize: "1rem",
-                      fontWeight: "600"
+              {product.user && (
+                <InfoCard
+                  icon={<PersonIcon />}
+                  label="Dibuat Oleh"
+                  value={product.user.name}
+                  iconColor="#6366f1"
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      mt: 0.5,
                     }}
                   >
-                    <span className="icon">
-                      <i className="fas fa-home"></i>
-                    </span>
-                    <span>Kembali ke Home</span>
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </div>
+                    {product.user.name}
+                  </Typography>
+                  {product.user.email && (
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary", mt: 0.5 }}
+                    >
+                      {product.user.email}
+                    </Typography>
+                  )}
+                </InfoCard>
+              )}
+
+              {product.createdAt && (
+                <InfoCard
+                  icon={<CalendarIcon />}
+                  label="Tanggal Dibuat"
+                  iconColor="#6b7280"
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 500,
+                      mt: 0.5,
+                    }}
+                  >
+                    {new Date(product.createdAt).toLocaleDateString("id-ID", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Typography>
+                </InfoCard>
+              )}
+            </Box>
+
+            {/* Success Message */}
+            <Alert
+              severity="success"
+              icon={<CheckCircleOutlineIcon />}
+              sx={{
+                mt: 4,
+                borderRadius: 2,
+                backgroundColor: "success.light",
+                color: "success.dark",
+                border: "1px solid",
+                borderColor: "success.main",
+                "& .MuiAlert-icon": {
+                  color: "success.main",
+                },
+              }}
+            >
+              <Typography variant="body2">
+                Informasi produk berhasil dimuat dari QR Code
+              </Typography>
+            </Alert>
+
+            {/* Back Button */}
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Button
+                variant="contained"
+                startIcon={<HomeIcon />}
+                onClick={() => navigate("/")}
+                sx={{
+                  borderRadius: 2,
+                  px: 4,
+                  py: 1.5,
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "1rem",
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Kembali ke Home
+              </Button>
+            </Box>
+          </Paper>
+        ) : null}
+      </Container>
+    </Box>
   );
 };
 
 export default ProductDetail;
-

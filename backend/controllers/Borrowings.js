@@ -826,8 +826,46 @@ export const returnBorrowing = async (req, res) => {
             });
         }
         
-        // ===== UPDATE PEMINJAMAN =====
+        // ===== UPDATE STATUS TERLAMBAT SEBELUM RETURN =====
+        // Update status menjadi 'terlambat' jika expectedReturnDate sudah lewat
+        await updateOverdueStatus();
+        
+        // Re-fetch borrowing untuk mendapatkan status terbaru
+        borrowing = await Borrowing.findOne({
+            where: { id: borrowing.id },
+            attributes: [
+                'id',
+                'uuid',
+                'productId',
+                'borrowerId',
+                'namaPeminjam',
+                'borrowDate',
+                'returnDate',
+                'expectedReturnDate',
+                'status',
+                'notes',
+                'borrowedBy',
+                'createdAt',
+                'updatedAt'
+            ]
+        });
+        
+        // Jika expectedReturnDate sudah lewat dan status masih 'dipinjam', update ke 'terlambat'
         const returnDateNow = new Date();
+        if (borrowing.expectedReturnDate && borrowing.status === 'dipinjam') {
+            const expectedDate = new Date(borrowing.expectedReturnDate);
+            if (expectedDate < returnDateNow) {
+                // Update status menjadi 'terlambat' terlebih dahulu
+                await Borrowing.update(
+                    { status: 'terlambat' },
+                    { where: { id: borrowing.id } }
+                );
+                borrowing.status = 'terlambat';
+                console.log(`[RETURN] Updated status to 'terlambat' for borrowing ID ${borrowing.id} before return`);
+            }
+        }
+        
+        // ===== UPDATE PEMINJAMAN =====
         const updateData = {
             returnDate: returnDateNow,
             status: 'dikembalikan'

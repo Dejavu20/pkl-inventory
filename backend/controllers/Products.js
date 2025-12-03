@@ -378,13 +378,7 @@ export const getProductQRCode = async(req, res) => {
             return res.status(404).json({msg: "Produk tidak ditemukan"});
         }
         
-        // Check access permission
-        if(req.role && req.role.toLowerCase() !== "admin") {
-            if(req.userId !== product.userId) {
-                return res.status(403).json({msg: "Akses terlarang"});
-            }
-        }
-        
+        // All users can view and download QR code for all products
         // Create QR code URL (public URL untuk melihat detail produk)
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const qrDataUrl = `${frontendUrl}/products/detail/${product.uuid}`;
@@ -422,7 +416,7 @@ export const getProductDetail = async(req, res) => {
             where: {
                 uuid: req.params.id
             },
-            attributes: ['uuid', 'name', 'merek', 'serialNumber', 'image', 'kategori', 'status', 'createdAt', 'updatedAt'],
+            attributes: ['id', 'uuid', 'name', 'merek', 'serialNumber', 'image', 'kategori', 'status', 'createdAt', 'updatedAt'],
             include:[{
                 model: User,
                 attributes:['name','email']
@@ -434,16 +428,20 @@ export const getProductDetail = async(req, res) => {
         }
         
         // Check if product is currently borrowed
-        const activeBorrowing = await Borrowing.findOne({
-            where: {
-                productId: product.id,
-                status: {
-                    [Op.in]: ['dipinjam', 'terlambat']
-                }
-            },
-            attributes: ['uuid', 'namaPeminjam', 'borrowDate', 'expectedReturnDate', 'status'],
-            order: [['borrowDate', 'DESC']]
-        });
+        // Only query if product.id is valid
+        let activeBorrowing = null;
+        if (product.id) {
+            activeBorrowing = await Borrowing.findOne({
+                where: {
+                    productId: product.id,
+                    status: {
+                        [Op.in]: ['dipinjam', 'terlambat']
+                    }
+                },
+                attributes: ['uuid', 'namaPeminjam', 'borrowDate', 'expectedReturnDate', 'status'],
+                order: [['borrowDate', 'DESC']]
+            });
+        }
         
         // Record QR scan event
         const scanEvent = {

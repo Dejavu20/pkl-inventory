@@ -1,6 +1,34 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
+import ConfirmModal from "./ConfirmModal";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Stack,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+} from "@mui/icons-material";
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -59,20 +87,11 @@ const CategoryList = () => {
     setError("");
   };
 
-  const openDeleteConfirm = (category) => {
-    setCategoryToDelete(category);
-  };
-
-  const closeDeleteConfirm = () => {
-    setCategoryToDelete(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
 
-    // Validation
     if (!formData.name || formData.name.trim() === "") {
       setError("Nama kategori harus diisi");
       setIsSubmitting(false);
@@ -93,17 +112,15 @@ const CategoryList = () => {
 
     try {
       if (editingCategory) {
-        // Update category
         await axios.patch(`${API_BASE_URL}/categories/${editingCategory.uuid}`, {
           name: formData.name.trim(),
-          description: formData.description.trim() || null
+          description: formData.description.trim() || null,
         });
         setSuccess("Kategori berhasil diupdate!");
       } else {
-        // Create category
         await axios.post(`${API_BASE_URL}/categories`, {
           name: formData.name.trim(),
-          description: formData.description.trim() || null
+          description: formData.description.trim() || null,
         });
         setSuccess("Kategori berhasil ditambahkan!");
       }
@@ -131,7 +148,7 @@ const CategoryList = () => {
       setSuccess("");
       await axios.delete(`${API_BASE_URL}/categories/${categoryToDelete.uuid}`);
       setSuccess("Kategori berhasil dihapus!");
-      closeDeleteConfirm();
+      setCategoryToDelete(null);
       getCategories();
       setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
@@ -146,367 +163,242 @@ const CategoryList = () => {
   };
 
   return (
-    <div>
-      <div className="level is-mobile mb-5">
-        <div className="level-left">
-          <div className="level-item">
-            <div>
-              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                Manajemen Kategori
-              </h1>
-              <h2 className="subtitle is-6 has-text-grey">
-                Kelola kategori produk
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="level-item">
-            <button
-              onClick={openAddModal}
-              className="button is-primary"
-              style={{ borderRadius: "8px" }}
-            >
-              <span className="icon">
-                <i className="fas fa-plus"></i>
-              </span>
-              <span>Tambah Kategori</span>
-            </button>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Manajemen Kategori
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Kelola kategori produk
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={openAddModal}
+          sx={{
+            backgroundColor: "primary.main",
+            "&:hover": {
+              background: "linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%)",
+            },
+          }}
+        >
+          Tambah Kategori
+        </Button>
+      </Box>
 
+      {/* Alerts */}
       {error && (
-        <div className="notification is-danger is-light">
-          <button className="delete" onClick={() => setError("")}></button>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {success && (
-        <div className="notification is-success is-light">
-          <button className="delete" onClick={() => setSuccess("")}></button>
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
           {success}
-        </div>
+        </Alert>
       )}
 
+      {/* Loading State */}
       {isLoading ? (
-        <div className="has-text-centered py-6">
-          <span className="icon is-large">
-            <i className="fas fa-spinner fa-spin fa-2x"></i>
-          </span>
-          <p className="mt-3">Memuat data...</p>
-        </div>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : categories.length === 0 ? (
-        <div className="notification is-info is-light">
-          <p>Tidak ada kategori. Klik "Tambah Kategori" untuk menambahkan kategori pertama.</p>
-        </div>
+        <Alert severity="info">
+          Tidak ada kategori. Klik "Tambah Kategori" untuk menambahkan kategori pertama.
+        </Alert>
       ) : (
-        <div className="box" style={{
-          borderRadius: "12px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-          border: "none"
-        }}>
-          <div className="table-container" style={{ overflowX: "auto" }}>
-            <table className="table is-fullwidth" style={{ margin: 0 }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>No</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Nama Kategori</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Deskripsi</th>
-                  <th className="has-text-centered" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category, index) => (
-                  <tr
-                    key={category.uuid}
-                    style={{
-                      borderBottom: "1px solid #f0f0f0",
-                      transition: "background-color 0.2s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold has-text-grey">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <strong style={{ color: "#2c3e50" }}>{category.name}</strong>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-grey">
-                        {category.description || "-"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <div className="buttons are-small is-flex-wrap-wrap">
-                        <button
-                          onClick={() => openEditModal(category)}
-                          className="button is-info is-light"
-                          title="Edit Kategori"
-                          style={{ borderRadius: "6px" }}
-                        >
-                          <span className="icon">
-                            <i className="fas fa-edit"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => openDeleteConfirm(category)}
-                          className="button is-danger is-light"
-                          title="Hapus Kategori"
-                          style={{ borderRadius: "6px" }}
-                        >
-                          <span className="icon">
-                            <i className="fas fa-trash"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Hapus</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <TableContainer component={Paper} elevation={2}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "grey.100" }}>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    No
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Nama Kategori
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Deskripsi
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Aksi
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {categories.map((category, index) => (
+                <TableRow
+                  key={category.uuid}
+                  hover
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell>
+                    <Typography variant="body2">{index + 1}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {category.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {category.description || "-"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} justifyContent="center">
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        onClick={() => openEditModal(category)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        size="small"
+                        onClick={() => setCategoryToDelete(category)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
-      {/* Add/Edit Modal */}
-      {(showAddModal || editingCategory) && (
-        <div className="modal is-active">
-          <div className="modal-background" onClick={editingCategory ? closeEditModal : closeAddModal}></div>
-          <div className="modal-content" style={{ maxWidth: "500px" }}>
-            <div className="box" style={{
-              borderRadius: "12px",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              border: "none"
-            }}>
-              <h2 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                {editingCategory ? "Edit Kategori" : "Tambah Kategori Baru"}
-              </h2>
+      {/* Add/Edit Dialog */}
+      <Dialog
+        open={showAddModal || !!editingCategory}
+        onClose={editingCategory ? closeEditModal : closeAddModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingCategory ? "Edit Kategori" : "Tambah Kategori Baru"}
+          </DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
+                {error}
+              </Alert>
+            )}
 
-              {error && (
-                <div className="notification is-danger is-light">
-                  <button className="delete" onClick={() => setError("")}></button>
-                  {error}
-                </div>
-              )}
+            <TextField
+              fullWidth
+              label="Nama Kategori"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Masukkan nama kategori"
+              margin="normal"
+              inputProps={{ minLength: 2, maxLength: 50 }}
+              helperText="Nama kategori harus antara 2 hingga 50 karakter"
+            />
 
-              <form onSubmit={handleSubmit}>
-                <div className="field">
-                  <label className="label">
-                    Nama Kategori <span className="has-text-danger">*</span>
-                  </label>
-                  <div className="control has-icons-left">
-                    <input
-                      type="text"
-                      className="input"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Masukkan nama kategori"
-                      required
-                      minLength="2"
-                      maxLength="50"
-                    />
-                    <span className="icon is-small is-left">
-                      <i className="fas fa-tag"></i>
-                    </span>
-                  </div>
-                  <p className="help">
-                    Nama kategori harus antara 2 hingga 50 karakter
-                  </p>
-                </div>
-
-                <div className="field">
-                  <label className="label">Deskripsi</label>
-                  <div className="control">
-                    <textarea
-                      className="textarea"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Masukkan deskripsi kategori (opsional)"
-                      rows="3"
-                    />
-                  </div>
-                </div>
-
-                <div className="field is-grouped mt-5">
-                  <div className="control">
-                    <button
-                      type="submit"
-                      className="button is-primary"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <span className="icon">
-                            <i className="fas fa-spinner fa-spin"></i>
-                          </span>
-                          <span>Menyimpan...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="icon">
-                            <i className="fas fa-save"></i>
-                          </span>
-                          <span>Simpan</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="control">
-                    <button
-                      type="button"
-                      className="button is-light"
-                      onClick={editingCategory ? closeEditModal : closeAddModal}
-                      disabled={isSubmitting}
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-          <button
-            className="modal-close is-large"
-            aria-label="close"
-            onClick={editingCategory ? closeEditModal : closeAddModal}
-            disabled={isSubmitting}
-          ></button>
-        </div>
-      )}
+            <TextField
+              fullWidth
+              label="Deskripsi"
+              multiline
+              rows={3}
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="Masukkan deskripsi kategori (opsional)"
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={editingCategory ? closeEditModal : closeAddModal}
+              disabled={isSubmitting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting}
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
+            >
+              {isSubmitting ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Delete Confirmation Modal */}
-      {categoryToDelete && (
-        <div className="modal is-active">
-          <div className="modal-background" onClick={closeDeleteConfirm}></div>
-          <div className="modal-content" style={{ maxWidth: "500px" }}>
-            <div className="box" style={{
-              borderRadius: "12px",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              border: "none"
-            }}>
-              <div className="has-text-centered">
-                <div className="icon is-large mb-4" style={{ color: "#f14668" }}>
-                  <i className="fas fa-exclamation-triangle fa-3x"></i>
-                </div>
-                <h2 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                  Konfirmasi Hapus Kategori
-                </h2>
-                <p className="subtitle is-6 has-text-grey mb-4">
-                  Apakah Anda yakin ingin menghapus kategori ini?
-                </p>
-
-                <div className="notification is-danger is-light" style={{
-                  textAlign: "left",
-                  borderRadius: "8px"
-                }}>
-                  <p className="has-text-weight-semibold mb-2">
-                    <span className="icon mr-2">
-                      <i className="fas fa-info-circle"></i>
-                    </span>
-                    Kategori yang akan dihapus:
-                  </p>
-                  <div className="content is-small">
-                    <p className="mb-1">
-                      <strong>Nama:</strong> {categoryToDelete.name}
-                    </p>
-                    {categoryToDelete.description && (
-                      <p className="mb-1">
-                        <strong>Deskripsi:</strong> {categoryToDelete.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="notification is-warning is-light mt-4" style={{ borderRadius: "8px" }}>
-                  <p className="is-size-7">
-                    <i className="fas fa-exclamation-circle mr-2"></i>
-                    <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan.
-                    Kategori akan dihapus secara permanen.
-                  </p>
-                </div>
-              </div>
-
-              <div className="buttons is-centered mt-5">
-                <button
-                  className="button is-light"
-                  onClick={closeDeleteConfirm}
-                  disabled={isDeleting}
-                  style={{ borderRadius: "8px", minWidth: "120px" }}
-                >
-                  <span className="icon">
-                    <i className="fas fa-times"></i>
-                  </span>
-                  <span>Batal</span>
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="button is-danger"
-                  disabled={isDeleting}
-                  style={{ borderRadius: "8px", minWidth: "120px" }}
-                >
-                  {isDeleting ? (
-                    <>
-                      <span className="icon">
-                        <i className="fas fa-spinner fa-spin"></i>
-                      </span>
-                      <span>Menghapus...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="icon">
-                        <i className="fas fa-trash"></i>
-                      </span>
-                      <span>Hapus</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          <button
-            className="modal-close is-large"
-            aria-label="close"
-            onClick={closeDeleteConfirm}
-            disabled={isDeleting}
-          ></button>
-        </div>
-      )}
-    </div>
+      <ConfirmModal
+        isOpen={!!categoryToDelete}
+        onClose={() => setCategoryToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Konfirmasi Hapus Kategori"
+        message={
+          categoryToDelete && (
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Kategori yang akan dihapus:
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Nama:</strong> {categoryToDelete.name}
+                </Typography>
+                {categoryToDelete.description && (
+                  <Typography variant="body2">
+                    <strong>Deskripsi:</strong> {categoryToDelete.description}
+                  </Typography>
+                )}
+              </Alert>
+              <Alert
+                severity="info"
+                sx={{
+                  backgroundColor: "grey.50",
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. Kategori
+                  akan dihapus secara permanen.
+                </Typography>
+              </Alert>
+            </Box>
+          )
+        }
+        confirmText="Hapus"
+        cancelText="Batal"
+        type="danger"
+        isLoading={isDeleting}
+      />
+    </Box>
   );
 };
 
 export default CategoryList;
-
-
-
-
-
-
-

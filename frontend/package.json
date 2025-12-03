@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
     "@reduxjs/toolkit": "^2.9.2",
     "axios": "^1.13.1",
-    "bulma": "^1.0.4",
     "cra-template-redux": "2.0.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",

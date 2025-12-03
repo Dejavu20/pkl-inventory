@@ -2,6 +2,29 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import API_BASE_URL from "../config/api.js";
+import ConfirmModal from "./ConfirmModal";
+import {
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  Button,
+  Alert,
+  Chip,
+  IconButton,
+  CircularProgress,
+  Stack,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 
 const Userlist = () => {
   const [users, setUsers] = useState([]);
@@ -44,245 +67,187 @@ const Userlist = () => {
     }
   };
 
-  const confirmDelete = (userId, userName) => {
-    setDeleteConfirm({ userId, userName });
-  };
-
-  const cancelDelete = () => {
-    setDeleteConfirm(null);
-  };
-
   return (
-    <div>
-      <div className="level is-mobile mb-5">
-        <div className="level-left">
-          <div className="level-item">
-            <div>
-              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                Manajemen User
-              </h1>
-              <h2 className="subtitle is-6 has-text-grey">
-                Daftar semua user dalam sistem
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="level-item">
-            <Link 
-              to="/users/add" 
-              className="button is-primary"
-              style={{ borderRadius: "8px" }}
-            >
-              <span className="icon">
-                <i className="fas fa-plus"></i>
-              </span>
-              <span className="is-hidden-mobile">Tambah User</span>
-              <span className="is-hidden-tablet">+</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Manajemen User
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Daftar semua user dalam sistem
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          to="/users/add"
+          variant="contained"
+          startIcon={<AddIcon />}
+          sx={{
+            backgroundColor: "primary.main",
+            "&:hover": {
+              background: "linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%)",
+            },
+          }}
+        >
+          Tambah User
+        </Button>
+      </Box>
 
+      {/* Error Message */}
       {error && (
-        <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
-          <button className="delete" onClick={() => setError("")}></button>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError("")}>
           {error}
-        </div>
+        </Alert>
       )}
 
-      {deleteConfirm && (
-        <div className="modal is-active">
-          <div className="modal-background" onClick={cancelDelete}></div>
-          <div className="modal-content" style={{ maxWidth: "500px" }}>
-            <div className="box" style={{
-              borderRadius: "12px",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              border: "none"
-            }}>
-              <div className="has-text-centered">
-                <div className="icon is-large mb-4" style={{ color: "#f14668" }}>
-                  <i className="fas fa-exclamation-triangle fa-3x"></i>
-                </div>
-                <h2 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                  Konfirmasi Hapus User
-                </h2>
-                <p className="subtitle is-6 has-text-grey mb-4">
-                  Apakah Anda yakin ingin menghapus user ini?
-                </p>
-              </div>
-              
-              <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
-                <p className="has-text-weight-semibold mb-2">
-                  <span className="icon mr-2">
-                    <i className="fas fa-info-circle"></i>
-                  </span>
-                  User yang akan dihapus:
-                </p>
-                <p className="is-size-6">
-                  <strong>{deleteConfirm.userName}</strong>
-                </p>
-              </div>
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => deleteUser(deleteConfirm?.userId)}
+        title="Konfirmasi Hapus User"
+        message={
+          <Box sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                User yang akan dihapus:
+              </Typography>
+              <Typography variant="body2">
+                <strong>{deleteConfirm?.userName}</strong>
+              </Typography>
+            </Alert>
+            <Alert
+              severity="info"
+              sx={{
+                backgroundColor: "grey.50",
+                border: "1px solid",
+                borderColor: "grey.200",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. User akan
+                dihapus secara permanen.
+              </Typography>
+            </Alert>
+          </Box>
+        }
+        confirmText="Hapus"
+        cancelText="Batal"
+        type="danger"
+      />
 
-              <div className="notification is-warning is-light mt-4" style={{ borderRadius: "8px" }}>
-                <p className="is-size-7">
-                  <i className="fas fa-exclamation-circle mr-2"></i>
-                  <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan.
-                  User akan dihapus secara permanen.
-                </p>
-              </div>
-
-              <div className="buttons is-centered mt-5">
-                <button
-                  className="button is-light"
-                  onClick={cancelDelete}
-                  style={{ borderRadius: "8px", minWidth: "120px" }}
-                >
-                  <span className="icon">
-                    <i className="fas fa-times"></i>
-                  </span>
-                  <span>Batal</span>
-                </button>
-                <button
-                  className="button is-danger"
-                  onClick={() => deleteUser(deleteConfirm.userId)}
-                  style={{ borderRadius: "8px", minWidth: "120px" }}
-                >
-                  <span className="icon">
-                    <i className="fas fa-trash"></i>
-                  </span>
-                  <span>Hapus</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Loading State */}
       {isLoading ? (
-        <div className="has-text-centered py-6">
-          <span className="icon is-large">
-            <i className="fas fa-spinner fa-spin fa-2x"></i>
-          </span>
-          <p className="mt-3">Memuat data...</p>
-        </div>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : users.length === 0 ? (
-        <div className="notification is-info is-light">
-          <p>Tidak ada user yang ditemukan.</p>
-        </div>
+        <Alert severity="info">Tidak ada user yang ditemukan.</Alert>
       ) : (
-        <div className="box" style={{
-          borderRadius: "12px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-          border: "none"
-        }}>
-          <div className="table-container" style={{ overflowX: "auto" }}>
-            <table className="table is-fullwidth" style={{ margin: 0 }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>No</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Nama</th>
-                  <th className="is-hidden-mobile" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Email</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Role</th>
-                  <th className="has-text-centered" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6"
-                  }}>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user, index) => (
-                  <tr 
-                    key={user.uuid}
-                    style={{
-                      borderBottom: "1px solid #f0f0f0",
-                      transition: "background-color 0.2s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold has-text-grey">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <strong style={{ color: "#2c3e50" }}>{user.name}</strong>
-                      <br className="is-hidden-tablet" />
-                      <span className="is-size-7 has-text-grey is-hidden-tablet">
-                        {user.email}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-grey">{user.email || "-"}</span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span
-                        className={`tag ${
-                          user.role && user.role.toLowerCase() === "admin"
-                            ? "is-danger"
-                            : "is-info"
-                        }`}
-                        style={{ borderRadius: "6px" }}
+        <TableContainer component={Paper} elevation={2}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "grey.100" }}>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    No
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Nama
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Email
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Role
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Aksi
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.map((user, index) => (
+                <TableRow
+                  key={user.uuid}
+                  hover
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell>
+                    <Typography variant="body2">{index + 1}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {user.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: { xs: "block", md: "none" } }}
+                    >
+                      {user.email}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {user.email || "-"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={user.role || "User"}
+                      color={user.role?.toLowerCase() === "admin" ? "error" : "primary"}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} justifyContent="center">
+                      <IconButton
+                        component={Link}
+                        to={`/users/edit/${user.uuid}`}
+                        color="primary"
+                        size="small"
                       >
-                        {user.role || "User"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <div className="buttons are-small is-flex-wrap-wrap">
-                        <Link
-                          to={`/users/edit/${user.uuid}`}
-                          className="button is-info is-light"
-                          title="Edit User"
-                          style={{ borderRadius: "6px" }}
-                        >
-                          <span className="icon">
-                            <i className="fas fa-edit"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Edit</span>
-                        </Link>
-                        <button
-                          onClick={() => confirmDelete(user.uuid, user.name)}
-                          className="button is-danger is-light"
-                          title="Hapus User"
-                          style={{ borderRadius: "6px" }}
-                        >
-                          <span className="icon">
-                            <i className="fas fa-trash"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Hapus</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() =>
+                          setDeleteConfirm({ userId: user.uuid, userName: user.name })
+                        }
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
-    </div>
+    </Box>
   );
 };
 

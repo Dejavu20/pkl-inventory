@@ -1,14 +1,45 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { getMe } from "../features/authSlice";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
 import CSVDownloadModal from "./CSVDownloadModal";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Alert,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  InputAdornment,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  Avatar,
+  Stack,
+  Grid,
+} from "@mui/material";
+import {
+  Download as DownloadIcon,
+  ArrowBack as ArrowBackIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon,
+  Refresh as RefreshIcon,
+  Inventory as InventoryIcon,
+} from "@mui/icons-material";
 
 const BorrowingHistoryList = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
   const [borrowings, setBorrowings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,24 +50,22 @@ const BorrowingHistoryList = () => {
   const [showCSVConfirm, setShowCSVConfirm] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
 
-  // Get current user info on mount
   useEffect(() => {
     dispatch(getMe());
   }, [dispatch]);
 
-  // Set default date range (last 30 days)
   useEffect(() => {
     const today = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(today.getDate() - 30);
-    
+
     const formatDate = (date) => {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
-    
+
     setStartDate(formatDate(thirtyDaysAgo));
     setEndDate(formatDate(today));
   }, []);
@@ -44,50 +73,50 @@ const BorrowingHistoryList = () => {
   const getBorrowings = useCallback(async () => {
     const startTime = Date.now();
     const minLoadingTime = 800;
-    
+
     try {
       setIsLoading(true);
       setError("");
-      
-      // Build query parameters
+
       const params = new URLSearchParams();
       if (filterStatus && filterStatus !== "all") {
-        params.append('status', filterStatus);
+        params.append("status", filterStatus);
       }
       if (startDate) {
-        params.append('startDate', startDate);
+        params.append("startDate", startDate);
       }
       if (endDate) {
-        params.append('endDate', endDate);
+        params.append("endDate", endDate);
       }
-      
+
       const response = await axios.get(
         `${API_BASE_URL}/borrowings?${params.toString()}`,
         {
-          withCredentials: true
+          withCredentials: true,
         }
       );
-      
+
       const newBorrowings = response.data || [];
-      
-      // Apply search filter
+
       let filtered = [...newBorrowings];
       if (searchTerm && searchTerm.trim() !== "") {
         const search = searchTerm.toLowerCase().trim();
-        filtered = filtered.filter(borrowing =>
-          (borrowing.product?.name?.toLowerCase().includes(search)) ||
-          (borrowing.product?.merek?.toLowerCase().includes(search)) ||
-          (borrowing.product?.serialNumber?.toLowerCase().includes(search)) ||
-          (borrowing.namaPeminjam?.toLowerCase().includes(search))
+        filtered = filtered.filter(
+          (borrowing) =>
+            (borrowing.product?.name?.toLowerCase().includes(search)) ||
+            (borrowing.product?.merek?.toLowerCase().includes(search)) ||
+            (borrowing.product?.serialNumber?.toLowerCase().includes(search)) ||
+            (borrowing.namaPeminjam?.toLowerCase().includes(search))
         );
       }
-      
+
       setBorrowings(filtered);
-      
-      // Ensure minimum loading time
+
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } catch (error) {
       if (error.response) {
@@ -95,56 +124,58 @@ const BorrowingHistoryList = () => {
       } else {
         setError("Gagal memuat data peminjaman");
       }
-      
-      // Ensure minimum loading time even on error
+
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } finally {
       setIsLoading(false);
     }
   }, [startDate, endDate, filterStatus, searchTerm]);
 
-  // Load borrowings when filters change (but not searchTerm, it's handled in getBorrowings)
   useEffect(() => {
     if (startDate && endDate) {
       getBorrowings();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, filterStatus]);
+  }, [startDate, endDate, filterStatus, getBorrowings]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      dipinjam: { class: "is-info", text: "Dipinjam" },
-      dikembalikan: { class: "is-success", text: "Dikembalikan" },
-      terlambat: { class: "is-danger", text: "Terlambat" }
+      dipinjam: { color: "info", text: "Dipinjam" },
+      dikembalikan: { color: "success", text: "Dikembalikan" },
+      terlambat: { color: "error", text: "Terlambat" },
     };
-    const config = statusConfig[status] || { class: "is-light", text: status };
+    const config = statusConfig[status] || { color: "default", text: status };
     return (
-      <span className={`tag ${config.class}`} style={{ borderRadius: "4px" }}>
-        {config.text}
-      </span>
+      <Chip
+        label={config.text}
+        size="small"
+        color={config.color}
+        sx={{ fontWeight: 500 }}
+      />
     );
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatDateTime = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -156,14 +187,14 @@ const BorrowingHistoryList = () => {
     const today = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(today.getDate() - 30);
-    
+
     const formatDate = (date) => {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
-    
+
     setStartDate(formatDate(thirtyDaysAgo));
     setEndDate(formatDate(today));
     setFilterStatus("all");
@@ -179,48 +210,44 @@ const BorrowingHistoryList = () => {
     try {
       setIsDownloadingCSV(true);
       setError("");
-      
-      // Use filters from modal if provided, otherwise use current filters
+
       const exportStartDate = csvFilters?.startDate || startDate;
       const exportEndDate = csvFilters?.endDate || endDate;
       const exportStatus = csvFilters?.status || filterStatus;
-      
-      // Build query parameters
+
       const params = new URLSearchParams();
       if (exportStatus && exportStatus !== "all") {
-        params.append('status', exportStatus);
+        params.append("status", exportStatus);
       }
       if (exportStartDate) {
-        params.append('startDate', exportStartDate);
+        params.append("startDate", exportStartDate);
       }
       if (exportEndDate) {
-        params.append('endDate', exportEndDate);
+        params.append("endDate", exportEndDate);
       }
-      
+
       const response = await axios.get(
         `${API_BASE_URL}/borrowings/export/csv?${params.toString()}`,
         {
-          responseType: 'blob',
-          withCredentials: true
+          responseType: "blob",
+          withCredentials: true,
         }
       );
-      
-      // Create blob URL
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      
-      // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = 'borrowings.csv';
+
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = "borrowings.csv";
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
         if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/"/g, '');
+          filename = filenameMatch[1].replace(/"/g, "");
         }
       }
-      
-      link.setAttribute('download', filename);
+
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -239,289 +266,305 @@ const BorrowingHistoryList = () => {
   };
 
   return (
-    <div>
-      <div className="level is-mobile mb-5" style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-        <div className="level-left">
-          <div className="level-item">
-            <div>
-              <h1 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.25rem" }}>
-                History Peminjaman
-              </h1>
-              <h2 className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-                Riwayat semua peminjaman barang
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="level-item">
-            <div className="buttons">
-              <button
-                onClick={() => setShowCSVConfirm(true)}
-                className="button is-success"
-                disabled={isDownloadingCSV || isLoading || borrowings.length === 0}
-                style={{ borderRadius: "8px" }}
-                title="Download data peminjaman dalam format CSV"
-              >
-                <span className="icon">
-                  <i className={`fas ${isDownloadingCSV ? 'fa-spinner fa-spin' : 'fa-download'}`}></i>
-                </span>
-                <span className="is-hidden-mobile">Download CSV</span>
-              </button>
-              <Link to="/borrowings" className="button is-primary">
-                <span className="icon">
-                  <i className="fas fa-arrow-left"></i>
-                </span>
-                <span>Kembali ke Peminjaman</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <Box sx={{ p: 3 }}>
+      {/* Alerts */}
       {error && (
-        <div className="notification is-danger is-light">
-          <button className="delete" onClick={() => setError("")}></button>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
-        </div>
+        </Alert>
       )}
 
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+          opacity: isLoading ? 0.5 : 1,
+          transition: "opacity 0.3s",
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            History Peminjaman
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Riwayat semua peminjaman barang
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={
+              isDownloadingCSV ? (
+                <CircularProgress size={20} />
+              ) : (
+                <DownloadIcon />
+              )
+            }
+            onClick={() => setShowCSVConfirm(true)}
+            disabled={isDownloadingCSV || isLoading || borrowings.length === 0}
+            sx={{
+              backgroundColor: "success.main",
+              "&:hover": {
+                backgroundColor: "success.dark",
+              },
+            }}
+          >
+            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
+              Download CSV
+            </Box>
+          </Button>
+          <Button
+            component={Link}
+            to="/borrowings"
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            disabled={isLoading}
+          >
+            Kembali ke Peminjaman
+          </Button>
+        </Stack>
+      </Box>
+
       {/* Filter Section */}
-      <div className="box" style={{ borderRadius: "8px", marginBottom: "1.5rem" }}>
-        <h3 className="title is-5 mb-4">Filter Pencarian</h3>
-        <div className="columns is-multiline">
-          <div className="column is-12-mobile is-6-tablet is-3-desktop">
-            <label className="label is-size-7">Tanggal Mulai</label>
-            <div className="control">
-              <input
-                className="input"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{ borderRadius: "4px" }}
-              />
-            </div>
-          </div>
-          <div className="column is-12-mobile is-6-tablet is-3-desktop">
-            <label className="label is-size-7">Tanggal Akhir</label>
-            <div className="control">
-              <input
-                className="input"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{ borderRadius: "4px" }}
-              />
-            </div>
-          </div>
-          <div className="column is-12-mobile is-6-tablet is-3-desktop">
-            <label className="label is-size-7">Status</label>
-            <div className="control">
-              <div className="select is-fullwidth">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  style={{ borderRadius: "4px" }}
-                >
-                  <option value="all">Semua Status</option>
-                  <option value="dipinjam">Dipinjam</option>
-                  <option value="dikembalikan">Dikembalikan</option>
-                  <option value="terlambat">Terlambat</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="column is-12-mobile is-6-tablet is-3-desktop">
-            <label className="label is-size-7">Cari</label>
-            <div className="control">
-              <input
-                className="input"
-                type="text"
-                placeholder="Cari produk, merek, atau peminjam..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ borderRadius: "4px" }}
-              />
-            </div>
-          </div>
-          <div className="column is-12">
-            <div className="buttons">
-              <button
-                className="button is-primary"
+      <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
+          Filter Pencarian
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Tanggal Mulai"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Tanggal Akhir"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="all">Semua Status</MenuItem>
+                <MenuItem value="dipinjam">Dipinjam</MenuItem>
+                <MenuItem value="dikembalikan">Dikembalikan</MenuItem>
+                <MenuItem value="terlambat">Terlambat</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Cari"
+              placeholder="Cari produk, merek, atau peminjam..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="contained"
+                startIcon={<FilterListIcon />}
                 onClick={handleFilter}
                 disabled={isLoading}
+                sx={{
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
               >
-                <span className="icon">
-                  <i className="fas fa-filter"></i>
-                </span>
-                <span>Terapkan Filter</span>
-              </button>
-              <button
-                className="button is-light"
+                Terapkan Filter
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
                 onClick={handleReset}
                 disabled={isLoading}
               >
-                <span className="icon">
-                  <i className="fas fa-redo"></i>
-                </span>
-                <span>Reset</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+                Reset
+              </Button>
+            </Stack>
+          </Grid>
+        </Grid>
+      </Paper>
 
+      {/* Loading State */}
       {isLoading ? (
-        <div className="has-text-centered py-6" style={{ minHeight: "300px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-          <span className="icon is-large mb-4">
-            <i className="fas fa-spinner fa-spin fa-3x has-text-primary"></i>
-          </span>
-          <p className="is-size-5 has-text-weight-semibold mt-3">Memuat history peminjaman...</p>
-          <p className="is-size-7 has-text-grey mt-2">Mohon tunggu sebentar</p>
-        </div>
+        <Paper sx={{ p: 8 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress size={64} sx={{ mb: 3 }} />
+            <Typography variant="h6" fontWeight="semibold" gutterBottom>
+              Memuat history peminjaman...
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Mohon tunggu sebentar
+            </Typography>
+          </Box>
+        </Paper>
       ) : borrowings.length === 0 ? (
-        <div className="notification is-info is-light">
-          <p>Tidak ada data peminjaman yang ditemukan untuk periode yang dipilih.</p>
-        </div>
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="body1" color="text.secondary" align="center">
+            Tidak ada data peminjaman yang ditemukan untuk periode yang dipilih.
+          </Typography>
+        </Paper>
       ) : (
-        <div className="box" style={{ 
-          borderRadius: "4px", 
-          border: "1px solid #e0e0e0",
-          padding: "1rem"
-        }}>
-          <div className="table-container" style={{ overflowX: "auto" }}>
-            <table className="table is-fullwidth" style={{ margin: 0 }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>No</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Produk</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Peminjam</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tanggal Pinjam</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tgl. Kembali (Diharapkan)</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tgl. Kembali (Aktual)</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
+        <>
+          <TableContainer component={Paper} elevation={2}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "grey.100" }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      No
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Produk
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Peminjam
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Tanggal Pinjam
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Tgl. Kembali (Diharapkan)
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Tgl. Kembali (Aktual)
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Status
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {borrowings.map((borrowing, index) => (
-                  <tr 
-                    key={borrowing.uuid || borrowing.id}
-                    style={{ 
-                      borderBottom: "1px solid #f0f0f0",
-                      transition: "background-color 0.2s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold has-text-grey">
+                  <TableRow key={borrowing.uuid || borrowing.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
                         {index + 1}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <div className="is-flex is-align-items-center">
-                        <div 
-                          className="is-flex is-align-items-center is-justify-content-center mr-3"
-                          style={{
-                            width: "48px",
-                            height: "48px",
-                            minWidth: "48px",
-                            borderRadius: "8px",
-                            backgroundColor: borrowing.product?.image ? "transparent" : "#f5f5f5",
-                            border: "2px solid #e0e0e0",
-                            overflow: "hidden",
-                            position: "relative"
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Avatar
+                          src={borrowing.product?.image}
+                          variant="rounded"
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            bgcolor: "grey.200",
                           }}
                         >
-                          {borrowing.product?.image ? (
-                            <img
-                              src={borrowing.product.image}
-                              alt={borrowing.product?.name || "Product"}
-                              style={{
-                                objectFit: "cover",
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: "8px"
-                              }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                const fallback = e.target.parentElement.querySelector('.image-fallback');
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className="image-fallback is-flex is-align-items-center is-justify-content-center"
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: borrowing.product?.image ? "none" : "flex"
-                            }}
-                          >
-                            <span className="icon has-text-grey">
-                              <i className="fas fa-box"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="has-text-weight-semibold is-size-6" style={{ margin: 0 }}>
+                          <InventoryIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
                             {borrowing.product?.name || "-"}
-                          </p>
+                          </Typography>
                           {borrowing.product?.merek && (
-                            <p className="is-size-7 has-text-grey" style={{ margin: 0 }}>
+                            <Typography variant="caption" color="text.secondary">
                               {borrowing.product.merek}
-                            </p>
+                            </Typography>
                           )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold">
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Typography variant="body2" fontWeight="medium">
                         {borrowing.namaPeminjam || "-"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7">
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
                         {formatDateTime(borrowing.borrowDate)}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
-                        {borrowing.expectedReturnDate ? formatDateTime(borrowing.expectedReturnDate) : "-"}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
-                        {borrowing.returnDate ? formatDateTime(borrowing.returnDate) : "-"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      {getStatusBadge(borrowing.status)}
-                    </td>
-                  </tr>
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {borrowing.expectedReturnDate
+                          ? formatDateTime(borrowing.expectedReturnDate)
+                          : "-"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {borrowing.returnDate
+                          ? formatDateTime(borrowing.returnDate)
+                          : "-"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(borrowing.status)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {!isLoading && borrowings.length > 0 && (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              <Typography variant="body2">
+                Menampilkan {borrowings.length} peminjaman untuk periode{" "}
+                {formatDate(startDate)} - {formatDate(endDate)}
+              </Typography>
+            </Alert>
+          )}
+        </>
       )}
 
-      {!isLoading && borrowings.length > 0 && (
-        <div className="notification is-info is-light mt-4">
-          <p className="is-size-7">
-            Menampilkan {borrowings.length} peminjaman untuk periode {formatDate(startDate)} - {formatDate(endDate)}
-          </p>
-        </div>
-      )}
-
-      {/* CSV Download Modal with Date Range Selection */}
+      {/* CSV Download Modal */}
       <CSVDownloadModal
         isOpen={showCSVConfirm}
         onClose={() => setShowCSVConfirm(false)}
@@ -533,9 +576,8 @@ const BorrowingHistoryList = () => {
         isLoading={isDownloadingCSV}
         currentDataCount={borrowings.length}
       />
-    </div>
+    </Box>
   );
 };
 
 export default BorrowingHistoryList;
-

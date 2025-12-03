@@ -3,6 +3,40 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  InputAdornment,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import {
+  AccountCircle,
+  Inventory as InventoryIcon,
+  People as PeopleIcon,
+  AdminPanelSettings as AdminIcon,
+  History as HistoryIcon,
+  FilterList,
+  Search,
+  Close,
+} from "@mui/icons-material";
 
 const Welcome = () => {
   const { user } = useSelector((state) => state.auth);
@@ -15,7 +49,7 @@ const Welcome = () => {
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalUsers: 0,
-    totalAdmins: 0
+    totalAdmins: 0,
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -57,22 +91,24 @@ const Welcome = () => {
   const applyFilters = useCallback(() => {
     let filtered = [...allHistory];
 
-    // Filter by kategori
     if (filterKategori && filterKategori !== "all") {
-      filtered = filtered.filter(item => 
-        item.kategori && item.kategori.toLowerCase() === filterKategori.toLowerCase()
+      filtered = filtered.filter(
+        (item) =>
+          item.kategori &&
+          item.kategori.toLowerCase() === filterKategori.toLowerCase()
       );
     }
 
-    // Filter by search term
     if (searchTerm && searchTerm.trim() !== "") {
       const search = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(item =>
-        item.productName.toLowerCase().includes(search) ||
-        item.merek.toLowerCase().includes(search) ||
-        (item.serialNumber && item.serialNumber.toLowerCase().includes(search)) ||
-        (item.kategori && item.kategori.toLowerCase().includes(search)) ||
-        (item.createdBy && item.createdBy.toLowerCase().includes(search))
+      filtered = filtered.filter(
+        (item) =>
+          item.productName.toLowerCase().includes(search) ||
+          item.merek.toLowerCase().includes(search) ||
+          (item.serialNumber &&
+            item.serialNumber.toLowerCase().includes(search)) ||
+          (item.kategori && item.kategori.toLowerCase().includes(search)) ||
+          (item.createdBy && item.createdBy.toLowerCase().includes(search))
       );
     }
 
@@ -80,14 +116,12 @@ const Welcome = () => {
   }, [allHistory, filterKategori, searchTerm]);
 
   useEffect(() => {
-    // Filter history when filterKategori or searchTerm changes
     applyFilters();
   }, [applyFilters]);
 
-  // Get unique categories from all history
   const getCategories = () => {
     const categories = new Set();
-    allHistory.forEach(item => {
+    allHistory.forEach((item) => {
       if (item.kategori && item.kategori.trim() !== "") {
         categories.add(item.kategori);
       }
@@ -98,380 +132,321 @@ const Welcome = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   return (
-    <div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Welcome Card */}
-      <div className="box mb-4" style={{
-        borderRadius: "4px",
-        border: "1px solid #e0e0e0",
-        padding: "1.5rem",
-        backgroundColor: "#ffffff"
-      }}>
-        <div className="media">
-          <div className="media-left">
-            <div style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "4px",
-              backgroundColor: "#f0f0f0",
+      <Paper elevation={2} sx={{ p: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: 2,
+              bgcolor: "grey.100",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
-            }}>
-              <span className="icon">
-                <i className="fas fa-user-circle fa-2x has-text-grey"></i>
-              </span>
-            </div>
-          </div>
-          <div className="media-content">
-            <h1 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.25rem" }}>
+              justifyContent: "center",
+            }}
+          >
+            <AccountCircle sx={{ fontSize: 40, color: "grey.600" }} />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
               Selamat Datang, {user && user.name}!
-            </h1>
-            <p className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-              Role: <span className="tag" style={{ backgroundColor: "#e0e0e0", color: "#2c3e50", fontWeight: "600" }}>
-                {user && user.role}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Role:{" "}
+              <Chip
+                label={user && user.role}
+                size="small"
+                sx={{ ml: 1 }}
+                color="primary"
+              />
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* Statistics Cards */}
-      <div className="columns is-mobile mb-4">
-        <div className="column is-4">
-          <div className="box" style={{
-            borderRadius: "8px",
-            border: "1px solid #e0e0e0",
-            padding: "1.25rem",
-            backgroundColor: "#ffffff",
-            textAlign: "center"
-          }}>
-            {isLoadingStats ? (
-              <div className="has-text-centered">
-                <span className="icon">
-                  <i className="fas fa-spinner fa-spin"></i>
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="icon is-large mb-3" style={{ color: "#48c774" }}>
-                  <i className="fas fa-box fa-2x"></i>
-                </div>
-                <h3 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.5rem" }}>
-                  {stats.totalProducts}
-                </h3>
-                <p className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-                  Total Barang
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="column is-4">
-          <div className="box" style={{
-            borderRadius: "8px",
-            border: "1px solid #e0e0e0",
-            padding: "1.25rem",
-            backgroundColor: "#ffffff",
-            textAlign: "center"
-          }}>
-            {isLoadingStats ? (
-              <div className="has-text-centered">
-                <span className="icon">
-                  <i className="fas fa-spinner fa-spin"></i>
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="icon is-large mb-3" style={{ color: "#3273dc" }}>
-                  <i className="fas fa-users fa-2x"></i>
-                </div>
-                <h3 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.5rem" }}>
-                  {stats.totalUsers}
-                </h3>
-                <p className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-                  Total User
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="column is-4">
-          <div className="box" style={{
-            borderRadius: "8px",
-            border: "1px solid #e0e0e0",
-            padding: "1.25rem",
-            backgroundColor: "#ffffff",
-            textAlign: "center"
-          }}>
-            {isLoadingStats ? (
-              <div className="has-text-centered">
-                <span className="icon">
-                  <i className="fas fa-spinner fa-spin"></i>
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="icon is-large mb-3" style={{ color: "#ff3860" }}>
-                  <i className="fas fa-user-shield fa-2x"></i>
-                </div>
-                <h3 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.5rem" }}>
-                  {stats.totalAdmins}
-                </h3>
-                <p className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-                  Total Admin
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <Card elevation={2} sx={{ textAlign: "center" }}>
+            <CardContent>
+              {isLoadingStats ? (
+                <CircularProgress />
+              ) : (
+                <>
+                  <InventoryIcon sx={{ fontSize: 48, color: "success.main", mb: 1 }} />
+                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    {stats.totalProducts}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Barang
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card elevation={2} sx={{ textAlign: "center" }}>
+            <CardContent>
+              {isLoadingStats ? (
+                <CircularProgress />
+              ) : (
+                <>
+                  <PeopleIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
+                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    {stats.totalUsers}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total User
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card elevation={2} sx={{ textAlign: "center" }}>
+            <CardContent>
+              {isLoadingStats ? (
+                <CircularProgress />
+              ) : (
+                <>
+                  <AdminIcon sx={{ fontSize: 48, color: "error.main", mb: 1 }} />
+                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    {stats.totalAdmins}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Admin
+                  </Typography>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {/* History Input Barang */}
-      <div className="box" style={{
-        borderRadius: "4px",
-        border: "1px solid #e0e0e0",
-        padding: "1.5rem"
-      }}>
-        <div className="mb-4">
-          <h2 className="title is-5 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.25rem" }}>
-            <span className="icon mr-2 has-text-grey">
-              <i className="fas fa-history"></i>
-            </span>
-            History Input Barang
-          </h2>
-          <p className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
+      <Paper elevation={2} sx={{ p: 3 }}>
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <HistoryIcon color="action" />
+            <Typography variant="h6" fontWeight="bold">
+              History Input Barang
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
             Riwayat input barang dalam sistem
-          </p>
-        </div>
+          </Typography>
+        </Box>
+
         {/* Filter Section */}
-        <div className="box mb-4" style={{ 
-          borderRadius: "4px", 
-          border: "1px solid #e0e0e0",
-          padding: "1rem",
-          backgroundColor: "#f8f9fa"
-        }}>
-                <div className="columns is-mobile is-vcentered">
-                  <div className="column is-12-mobile is-6-tablet">
-                    <div className="field">
-                      <label className="label is-size-7 has-text-weight-semibold">
-                        <span className="icon mr-1">
-                          <i className="fas fa-filter"></i>
-                        </span>
-                        Filter Kategori
-                      </label>
-                      <div className="control">
-                        <div className="select is-fullwidth">
-                          <select
-                            value={filterKategori}
-                            onChange={(e) => setFilterKategori(e.target.value)}
-                            style={{ borderRadius: "4px" }}
-                          >
-                            <option value="all">Semua Kategori</option>
-                            {getCategories().map((kategori, index) => (
-                              <option key={index} value={kategori}>
-                                {kategori}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="column is-12-mobile is-6-tablet">
-                    <div className="field">
-                      <label className="label is-size-7 has-text-weight-semibold">
-                        <span className="icon mr-1">
-                          <i className="fas fa-search"></i>
-                        </span>
-                        Cari History
-                      </label>
-                      <div className="control has-icons-left">
-                        <input
-                          type="text"
-                          className="input"
-                          placeholder="Cari berdasarkan nama, merek, serial, kategori, atau pembuat..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          style={{ borderRadius: "4px" }}
-                        />
-                        <span className="icon is-small is-left">
-                          <i className="fas fa-search"></i>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {(filterKategori !== "all" || searchTerm.trim() !== "") && (
-                  <div className="notification is-info is-light mt-3">
-                    <button 
-                      className="delete" 
-                      onClick={() => {
-                        setFilterKategori("all");
-                        setSearchTerm("");
-                      }}
-                    ></button>
-                    <p className="is-size-7">
-                      Menampilkan {history.length} dari {allHistory.length} history
-                      {filterKategori !== "all" && ` (Kategori: ${filterKategori})`}
-                      {searchTerm.trim() !== "" && ` (Pencarian: "${searchTerm}")`}
-                    </p>
-                  </div>
+        <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth size="small">
+                <InputLabel>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <FilterList fontSize="small" />
+                    Filter Kategori
+                  </Box>
+                </InputLabel>
+                <Select
+                  value={filterKategori}
+                  onChange={(e) => setFilterKategori(e.target.value)}
+                  label="Filter Kategori"
+                >
+                  <MenuItem value="all">Semua Kategori</MenuItem>
+                  {getCategories().map((kategori, index) => (
+                    <MenuItem key={index} value={kategori}>
+                      {kategori}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Cari berdasarkan nama, merek, serial, kategori, atau pembuat..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+          </Grid>
+
+          {(filterKategori !== "all" || searchTerm.trim() !== "") && (
+            <Alert
+              severity="info"
+              sx={{ mt: 2 }}
+              action={
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setFilterKategori("all");
+                    setSearchTerm("");
+                  }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              }
+            >
+              Menampilkan {history.length} dari {allHistory.length} history
+              {filterKategori !== "all" && ` (Kategori: ${filterKategori})`}
+              {searchTerm.trim() !== "" && ` (Pencarian: "${searchTerm}")`}
+            </Alert>
           )}
-        </div>
+        </Paper>
 
         {error && (
-          <div className="notification is-danger is-light" style={{ borderRadius: "4px" }}>
-            <button className="delete" onClick={() => setError("")}></button>
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError("")}>
             {error}
-          </div>
+          </Alert>
         )}
 
         {isLoading ? (
-          <div className="has-text-centered py-6">
-            <span className="icon is-large">
-              <i className="fas fa-spinner fa-spin fa-2x"></i>
-            </span>
-            <p className="mt-3">Memuat history...</p>
-          </div>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8 }}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Memuat history...
+            </Typography>
+          </Box>
         ) : history.length === 0 ? (
-          <div className="notification is-info is-light" style={{ borderRadius: "4px" }}>
-            <p>Tidak ada history input barang.</p>
-          </div>
+          <Alert severity="info">Tidak ada history input barang.</Alert>
         ) : (
-          <div className="table-container" style={{ overflowX: "auto" }}>
-            <table className="table is-fullwidth" style={{ margin: 0 }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>No</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Nama Produk</th>
-                  <th className="is-hidden-mobile" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Merek</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Kategori</th>
-                  <th className="is-hidden-mobile" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Serial Number</th>
-                  <th style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Dibuat Oleh</th>
-                  <th className="is-hidden-mobile" style={{
-                    fontWeight: "600",
-                    color: "#495057",
-                    borderBottom: "2px solid #dee2e6",
-                    fontSize: "0.875rem",
-                    padding: "0.75rem"
-                  }}>Waktu Input</th>
-                </tr>
-              </thead>
-              <tbody>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "grey.100" }}>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      No
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Nama Produk
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Merek
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Kategori
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Serial Number
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Dibuat Oleh
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Waktu Input
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {history.slice(0, 10).map((item, index) => (
-                  <tr 
-                    key={index}
-                    style={{
-                      borderBottom: "1px solid #f0f0f0"
-                    }}
-                  >
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold has-text-grey is-size-7">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <strong style={{ color: "#2c3e50", fontSize: "0.875rem" }}>{item.productName}</strong>
-                      <br className="is-hidden-tablet" />
-                      <span className="is-size-7 has-text-grey is-hidden-tablet">
+                  <TableRow key={index} hover>
+                    <TableCell>
+                      <Typography variant="body2">{index + 1}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {item.productName}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: { xs: "block", md: "none" } }}
+                      >
                         {item.merek} • {item.serialNumber}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="tag" style={{ borderRadius: "4px", fontSize: "0.75rem", backgroundColor: "#e0e0e0", color: "#2c3e50" }}>
-                        {item.merek}
-                      </span>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Chip label={item.merek} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
                       {item.kategori ? (
-                        <span className="tag is-info" style={{ borderRadius: "4px", fontSize: "0.75rem" }}>
-                          {item.kategori}
-                        </span>
+                        <Chip label={item.kategori} size="small" color="primary" />
                       ) : (
-                        <span className="has-text-grey is-size-7">-</span>
+                        <Typography variant="caption" color="text.secondary">
+                          -
+                        </Typography>
                       )}
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <code className="is-size-7" style={{
-                        backgroundColor: "#f0f0f0",
-                        padding: "0.25rem 0.5rem",
-                        borderRadius: "4px"
-                      }}>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Typography
+                        variant="caption"
+                        component="code"
+                        sx={{
+                          bgcolor: "grey.100",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                        }}
+                      >
                         {item.serialNumber}
-                      </code>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-grey is-size-7">{item.createdBy}</span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.createdBy}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                      <Typography variant="caption" color="text.secondary">
                         {formatDate(item.createdAt)}
-                      </span>
-                    </td>
-                  </tr>
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             {history.length > 10 && (
-              <div className="notification is-info is-light mt-4" style={{ borderRadius: "4px" }}>
-                <p className="is-size-7">
-                  Menampilkan 10 dari {history.length} history terbaru. 
-                  <Link to="/products" className="ml-2 has-text-weight-semibold">
-                    Lihat semua produk →
-                  </Link>
-                </p>
-              </div>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Menampilkan 10 dari {history.length} history terbaru.{" "}
+                <Link
+                  to="/products"
+                  style={{ textDecoration: "none", fontWeight: "bold" }}
+                >
+                  Lihat semua produk →
+                </Link>
+              </Alert>
             )}
-          </div>
+          </TableContainer>
         )}
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 };
 

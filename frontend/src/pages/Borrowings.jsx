@@ -22,9 +22,7 @@ const Borrowings = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "0.5rem" }}>
-        <BorrowingList />
-      </div>
+      <BorrowingList />
     </Layout>
   );
 };

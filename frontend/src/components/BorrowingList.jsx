@@ -5,6 +5,42 @@ import { getMe } from "../features/authSlice";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
 import ConfirmModal from "./ConfirmModal";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Alert,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  InputAdornment,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Avatar,
+  Stack,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Undo as UndoIcon,
+  Lock as LockIcon,
+  Warning as WarningIcon,
+  Inventory as InventoryIcon,
+  Close as CloseIcon,
+} from "@mui/icons-material";
 
 const BorrowingList = () => {
   const dispatch = useDispatch();
@@ -14,7 +50,7 @@ const BorrowingList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // Default: show all borrowings
+  const [filterStatus, setFilterStatus] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
   const [borrowingToDelete, setBorrowingToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,112 +58,91 @@ const BorrowingList = () => {
   const [isReturning, setIsReturning] = useState(false);
   const location = useLocation();
 
-  // Get current user info on mount
   useEffect(() => {
     dispatch(getMe());
   }, [dispatch]);
 
-  // Apply filters when filter criteria change
   useEffect(() => {
     if (allBorrowings.length === 0) return;
-    
+
     let filtered = [...allBorrowings];
 
-    // Filter by status
     if (filterStatus && filterStatus !== "all") {
       if (filterStatus === "active") {
-        // Show only active borrowings (dipinjam, terlambat)
-        filtered = filtered.filter(borrowing => 
-          ['dipinjam', 'terlambat'].includes(borrowing.status)
+        filtered = filtered.filter((borrowing) =>
+          ["dipinjam", "terlambat"].includes(borrowing.status)
         );
       } else {
-        filtered = filtered.filter(borrowing => 
-          borrowing.status === filterStatus
+        filtered = filtered.filter(
+          (borrowing) => borrowing.status === filterStatus
         );
       }
     }
 
-    // Filter by search term
     if (searchTerm && searchTerm.trim() !== "") {
       const search = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(borrowing =>
-        (borrowing.product?.name?.toLowerCase().includes(search)) ||
-        (borrowing.product?.merek?.toLowerCase().includes(search)) ||
-        (borrowing.product?.serialNumber?.toLowerCase().includes(search)) ||
-        (borrowing.namaPeminjam?.toLowerCase().includes(search))
+      filtered = filtered.filter(
+        (borrowing) =>
+          (borrowing.product?.name?.toLowerCase().includes(search)) ||
+          (borrowing.product?.merek?.toLowerCase().includes(search)) ||
+          (borrowing.product?.serialNumber?.toLowerCase().includes(search)) ||
+          (borrowing.namaPeminjam?.toLowerCase().includes(search))
       );
     }
 
     setBorrowings(filtered);
   }, [allBorrowings, filterStatus, searchTerm]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const getBorrowings = useCallback(async () => {
     const startTime = Date.now();
-    const minLoadingTime = 800; // Reduced minimum loading time untuk mengurangi blink
-    
+    const minLoadingTime = 800;
+
     try {
       setIsLoading(true);
       setError("");
       const response = await axios.get(`${API_BASE_URL}/borrowings`, {
-        withCredentials: true
+        withCredentials: true,
       });
       const newBorrowings = response.data || [];
-      
-      // Validasi dan log data yang diterima
-      console.log("Received borrowings:", newBorrowings.length);
-      
-      // Pastikan setiap borrowing memiliki UUID - gunakan fallback jika tidak ada
-      // JANGAN filter data, semua data harus ditampilkan
-      const validatedBorrowings = newBorrowings.map((borrowing, index) => {
-        // Pastikan borrowing adalah object
-        if (!borrowing || typeof borrowing !== 'object') {
-          console.error(`Borrowing at index ${index} is not a valid object:`, borrowing);
-          return null;
-        }
-        
-        // Cek UUID di berbagai kemungkinan lokasi
-        let uuid = borrowing.uuid || borrowing.UUID || null;
-        
-        // Jika tidak ada UUID, gunakan ID sebagai fallback
-        if (!uuid) {
-          if (borrowing.id) {
-            uuid = `temp-${borrowing.id}`;
-            console.log(`[FRONTEND] Using fallback UUID for borrowing ID ${borrowing.id}: ${uuid}`);
-          } else {
-            // Jika tidak ada ID juga, generate UUID sementara
-            uuid = `temp-${Date.now()}-${index}`;
-            console.warn(`[FRONTEND] Borrowing at index ${index} has no UUID and no ID, using generated UUID:`, uuid);
+
+      const validatedBorrowings = newBorrowings
+        .map((borrowing, index) => {
+          if (!borrowing || typeof borrowing !== "object") {
+            return null;
           }
-        }
-        
-        // Pastikan UUID adalah string
-        if (typeof uuid !== 'string' || uuid.trim() === '') {
-          // Generate UUID jika format tidak valid
-          if (borrowing.id) {
-            uuid = `temp-${borrowing.id}`;
-          } else {
-            uuid = `temp-${Date.now()}-${index}`;
+
+          let uuid = borrowing.uuid || borrowing.UUID || null;
+
+          if (!uuid) {
+            if (borrowing.id) {
+              uuid = `temp-${borrowing.id}`;
+            } else {
+              uuid = `temp-${Date.now()}-${index}`;
+            }
           }
-        }
-        
-        // Return borrowing dengan UUID yang sudah divalidasi
-        return {
-          ...borrowing,
-          uuid: uuid // Pastikan UUID selalu ada
-        };
-      }).filter(borrowing => borrowing !== null);
-      
-      console.log(`[FRONTEND] Processed ${validatedBorrowings.length} borrowings from ${newBorrowings.length} total`);
-      
-      // Set data sekaligus untuk menghindari blink
-      // Filter akan otomatis di-trigger oleh useEffect yang mendengarkan allBorrowings
+
+          if (typeof uuid !== "string" || uuid.trim() === "") {
+            if (borrowing.id) {
+              uuid = `temp-${borrowing.id}`;
+            } else {
+              uuid = `temp-${Date.now()}-${index}`;
+            }
+          }
+
+          return {
+            ...borrowing,
+            uuid: uuid,
+          };
+        })
+        .filter((borrowing) => borrowing !== null);
+
       setAllBorrowings(validatedBorrowings);
-      
-      // Ensure minimum loading time
+
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } catch (error) {
       if (error.response) {
@@ -135,143 +150,133 @@ const BorrowingList = () => {
       } else {
         setError("Gagal memuat data peminjaman");
       }
-      
-      // Ensure minimum loading time even on error
+
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minLoadingTime - elapsedTime)
+        );
       }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Load borrowings only once on mount and when location changes
   useEffect(() => {
     if (location.pathname === "/borrowings") {
       getBorrowings();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]); // Removed getBorrowings from deps to prevent multiple calls
+  }, [location.pathname, getBorrowings]);
 
-  // Auto-refresh (setiap 30 detik) - hanya refresh data, tidak trigger loading
+  // Real-time update untuk status terlambat (check setiap 10 detik)
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      axios.get(`${API_BASE_URL}/borrowings`, {
-        withCredentials: true
-      })
-        .then(response => {
-          const newBorrowings = response.data || [];
-          
-          // Validasi UUID untuk auto-refresh juga - dengan fallback
-          const validatedBorrowings = newBorrowings.map((borrowing, index) => {
-            if (!borrowing || typeof borrowing !== 'object') {
-              console.error(`[AUTO-REFRESH] Borrowing at index ${index} is not a valid object:`, borrowing);
-              return null;
-            }
-            
-            let uuid = borrowing.uuid || borrowing.UUID || null;
-            
-            // Jika tidak ada UUID, gunakan ID sebagai fallback
-            if (!uuid && borrowing.id) {
-              uuid = `temp-${borrowing.id}`;
-            }
-            
-            if (!uuid || typeof uuid !== 'string' || uuid.trim() === '') {
-              console.error(`[AUTO-REFRESH] Borrowing at index ${index} is missing UUID and ID:`, {
-                borrowing,
-                keys: Object.keys(borrowing)
-              });
-              return null;
-            }
-            
-            return {
-              ...borrowing,
-              uuid: uuid
-            };
-          }).filter(borrowing => borrowing !== null);
-          
-          if (validatedBorrowings.length !== newBorrowings.length) {
-            console.warn(`[AUTO-REFRESH] Filtered out ${newBorrowings.length - validatedBorrowings.length} borrowings without UUID`);
-          }
-          
-          setAllBorrowings(validatedBorrowings);
-          
-          // Apply filters dengan data baru tanpa loading state
-          let filtered = [...validatedBorrowings];
+    if (location.pathname !== "/borrowings") return;
 
-          if (filterStatus && filterStatus !== "all") {
-            if (filterStatus === "active") {
-              filtered = filtered.filter(borrowing => 
-                ['dipinjam', 'terlambat'].includes(borrowing.status)
-              );
-            } else {
-              filtered = filtered.filter(borrowing => 
-                borrowing.status === filterStatus
-              );
+    const checkOverdueStatus = () => {
+      // Update status terlambat di frontend berdasarkan expectedReturnDate
+      setAllBorrowings((prevBorrowings) => {
+        const now = new Date();
+        const updated = prevBorrowings.map((borrowing) => {
+          if (
+            borrowing.status === "dipinjam" &&
+            borrowing.expectedReturnDate
+          ) {
+            const expectedDate = new Date(borrowing.expectedReturnDate);
+            if (expectedDate < now) {
+              return { ...borrowing, status: "terlambat" };
             }
           }
+          return borrowing;
+        });
 
-          if (searchTerm && searchTerm.trim() !== "") {
-            const search = searchTerm.toLowerCase().trim();
-            filtered = filtered.filter(borrowing =>
+        // Update filtered borrowings juga
+        let filtered = [...updated];
+        if (filterStatus && filterStatus !== "all") {
+          if (filterStatus === "active") {
+            filtered = filtered.filter((borrowing) =>
+              ["dipinjam", "terlambat"].includes(borrowing.status)
+            );
+          } else {
+            filtered = filtered.filter(
+              (borrowing) => borrowing.status === filterStatus
+            );
+          }
+        }
+
+        if (searchTerm && searchTerm.trim() !== "") {
+          const search = searchTerm.toLowerCase().trim();
+          filtered = filtered.filter(
+            (borrowing) =>
               (borrowing.product?.name?.toLowerCase().includes(search)) ||
               (borrowing.product?.merek?.toLowerCase().includes(search)) ||
               (borrowing.product?.serialNumber?.toLowerCase().includes(search)) ||
               (borrowing.namaPeminjam?.toLowerCase().includes(search))
-            );
-          }
+          );
+        }
 
-          setBorrowings(filtered);
-        })
-        .catch((error) => {
-          // Silent fail for auto-refresh, tapi log error
-          console.error("[AUTO-REFRESH] Error:", error);
-        });
-    }, 30000); // 30 detik (30000ms)
-    
+        setBorrowings(filtered);
+        return updated;
+      });
+    };
+
+    // Check immediately
+    checkOverdueStatus();
+
+    // Check setiap 10 detik untuk update realtime
+    const overdueInterval = setInterval(checkOverdueStatus, 10000);
+
+    return () => clearInterval(overdueInterval);
+  }, [location.pathname, filterStatus, searchTerm]);
+
+  // Auto-refresh data dari server setiap 30 detik
+  useEffect(() => {
+    if (location.pathname !== "/borrowings") return;
+
+    const refreshInterval = setInterval(() => {
+      getBorrowings();
+    }, 30000);
+
     return () => clearInterval(refreshInterval);
-  }, [filterStatus, searchTerm]);
+  }, [location.pathname, getBorrowings]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      dipinjam: { class: "is-info", text: "Dipinjam" },
-      dikembalikan: { class: "is-success", text: "Dikembalikan" },
-      terlambat: { class: "is-danger", text: "Terlambat" }
+      dipinjam: { color: "info", text: "Dipinjam" },
+      dikembalikan: { color: "success", text: "Dikembalikan" },
+      terlambat: { color: "error", text: "Terlambat" },
     };
-    const config = statusConfig[status] || { class: "is-light", text: status };
+    const config = statusConfig[status] || { color: "default", text: status };
     return (
-      <span className={`tag ${config.class}`} style={{ borderRadius: "4px" }}>
-        {config.text}
-      </span>
+      <Chip
+        label={config.text}
+        size="small"
+        color={config.color}
+        sx={{ fontWeight: 500 }}
+      />
     );
   };
 
-  // Check if current user can return this borrowing
   const canReturnBorrowing = (borrowing) => {
     if (!user) return false;
     if (!borrowing) return false;
-    
-    // Admin can always return
-    const isAdmin = user.role && user.role.toLowerCase() === 'admin';
+
+    const isAdmin = user.role && user.role.toLowerCase() === "admin";
     if (isAdmin) return true;
-    
-    // Borrower can return their own borrowing
-    // Check if borrowerId matches user.id
-    // Note: user.id might be in different format, so we need to check
-    const isBorrower = borrowing.borrowerId && user.id && borrowing.borrowerId === user.id;
-    
+
+    const isBorrower =
+      borrowing.borrowerId && user.id && borrowing.borrowerId === user.id;
+
     return isBorrower;
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -285,7 +290,7 @@ const BorrowingList = () => {
 
   const confirmDelete = async () => {
     if (!borrowingToDelete) return;
-    
+
     try {
       setIsDeleting(true);
       setError("");
@@ -309,54 +314,36 @@ const BorrowingList = () => {
   };
 
   const openReturnConfirm = async (borrowing) => {
-    // Validasi borrowing object
     if (!borrowing) {
-      console.error("Borrowing object is null or undefined");
       setError("Data peminjaman tidak valid");
       return;
     }
-    
-    // Jika UUID tidak ada, coba query dari backend
-    if (!borrowing.uuid || borrowing.uuid.startsWith('temp-')) {
-      console.warn("Borrowing UUID is missing or fallback, querying from backend:", {
-        id: borrowing.id,
-        uuid: borrowing.uuid
-      });
-      
+
+    if (!borrowing.uuid || borrowing.uuid.startsWith("temp-")) {
       if (!borrowing.id) {
         setError("ID peminjaman tidak ditemukan. Silakan refresh halaman dan coba lagi.");
         return;
       }
-      
+
       try {
-        // Query UUID dari backend
         const response = await axios.get(`${API_BASE_URL}/borrowings`, {
-          withCredentials: true
+          withCredentials: true,
         });
         const allBorrowings = response.data || [];
-        const foundBorrowing = allBorrowings.find(b => b.id === borrowing.id);
-        
-        if (foundBorrowing && foundBorrowing.uuid && !foundBorrowing.uuid.startsWith('temp-')) {
-          // Update borrowing dengan UUID yang benar
+        const foundBorrowing = allBorrowings.find((b) => b.id === borrowing.id);
+
+        if (
+          foundBorrowing &&
+          foundBorrowing.uuid &&
+          !foundBorrowing.uuid.startsWith("temp-")
+        ) {
           borrowing.uuid = foundBorrowing.uuid;
-          console.log("Found valid UUID from backend:", borrowing.uuid);
-        } else {
-          // Jika masih tidak ditemukan, tetap buka modal tapi dengan warning
-          console.warn("UUID still not found after query, opening modal with warning");
         }
       } catch (error) {
         console.error("Error fetching UUID:", error);
-        // Tetap buka modal, tapi akan ada warning di modal
       }
     }
-    
-    console.log("Opening return confirm for borrowing:", {
-      uuid: borrowing.uuid,
-      id: borrowing.id,
-      product: borrowing.product?.name,
-      status: borrowing.status
-    });
-    
+
     setBorrowingToReturn(borrowing);
   };
 
@@ -366,90 +353,68 @@ const BorrowingList = () => {
 
   const confirmReturn = async () => {
     if (!borrowingToReturn) {
-      console.error("borrowingToReturn is null");
       setError("Data peminjaman tidak ditemukan");
       return;
     }
-    
-    // Validasi dan dapatkan UUID yang benar
+
     let uuid = borrowingToReturn.uuid;
     const borrowingId = borrowingToReturn.id;
-    
-    // Pastikan minimal ada ID untuk fallback
+
     if (!borrowingId) {
       setError("ID peminjaman tidak ditemukan. Silakan refresh halaman dan coba lagi.");
       return;
     }
-    
-    // Jika UUID tidak ada atau adalah fallback (temp-), query UUID dari backend
-    if (!uuid || uuid.startsWith('temp-')) {
-      console.warn("UUID not found or is fallback, querying from backend:", {
-        uuid,
-        id: borrowingId
-      });
-      
-      // Query UUID dari backend - refresh data untuk mendapatkan UUID yang benar
+
+    if (!uuid || uuid.startsWith("temp-")) {
       try {
         const response = await axios.get(`${API_BASE_URL}/borrowings`, {
-          withCredentials: true
+          withCredentials: true,
         });
         const allBorrowings = response.data || [];
-        const foundBorrowing = allBorrowings.find(b => b.id === borrowingId);
-        
-        if (foundBorrowing && foundBorrowing.uuid && !foundBorrowing.uuid.startsWith('temp-')) {
+        const foundBorrowing = allBorrowings.find((b) => b.id === borrowingId);
+
+        if (
+          foundBorrowing &&
+          foundBorrowing.uuid &&
+          !foundBorrowing.uuid.startsWith("temp-")
+        ) {
           uuid = foundBorrowing.uuid;
-          console.log("Found valid UUID from backend:", uuid);
         } else {
-          // Jika masih tidak ditemukan, gunakan fallback UUID (temp-{id})
-          // Backend akan handle fallback UUID dan mencari berdasarkan ID
           uuid = `temp-${borrowingId}`;
-          console.log("Using fallback UUID, backend will handle:", uuid);
         }
       } catch (error) {
-        console.error("Error fetching UUID:", error);
-        // Gunakan fallback UUID jika query gagal
         uuid = `temp-${borrowingId}`;
-        console.log("Using fallback UUID due to query error:", uuid);
       }
     }
-    
-    // Pastikan UUID adalah string yang valid
-    if (typeof uuid !== 'string' || uuid.trim() === '') {
-      // Fallback ke temp-{id} jika UUID tidak valid
+
+    if (typeof uuid !== "string" || uuid.trim() === "") {
       uuid = `temp-${borrowingId}`;
-      console.log("UUID invalid, using fallback:", uuid);
     }
-    
-    console.log("Confirming return for borrowing UUID:", uuid, "ID:", borrowingId);
-    
+
     try {
       setIsReturning(true);
       setError("");
       setSuccess("");
-      
-      const url = `${API_BASE_URL}/borrowings/${uuid}/return`;
-      console.log("Sending return request to:", url);
-      
+
       const response = await axios.patch(
-        url,
+        `${API_BASE_URL}/borrowings/${uuid}/return`,
         {},
         {
           withCredentials: true,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
-      
+
       if (response.status === 200 && response.data) {
         setSuccess(response.data.msg || "Barang berhasil dikembalikan!");
         closeReturnConfirm();
-        
-        // Refresh data setelah berhasil
+
         setTimeout(async () => {
           await getBorrowings();
         }, 500);
-        
+
         setTimeout(() => {
           setSuccess("");
         }, 3000);
@@ -457,15 +422,12 @@ const BorrowingList = () => {
         setError("Respon tidak valid dari server");
       }
     } catch (error) {
-      console.error("Error returning borrowing:", error);
-      
       let errorMessage = "Gagal mengembalikan barang";
-      
+
       if (error.response) {
-        // Server responded with error status
         const status = error.response.status;
         const data = error.response.data;
-        
+
         if (status === 404) {
           errorMessage = data?.msg || "Data peminjaman tidak ditemukan";
         } else if (status === 400) {
@@ -475,28 +437,14 @@ const BorrowingList = () => {
         } else {
           errorMessage = data?.msg || data?.message || errorMessage;
         }
-        
-        // Log detail error untuk debugging
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Error response:", {
-            status,
-            data,
-            headers: error.response.headers
-          });
-        }
       } else if (error.request) {
-        // Request was made but no response received
         errorMessage = "Tidak ada respons dari server. Periksa koneksi internet Anda.";
-        console.error("No response received:", error.request);
       } else {
-        // Something else happened
         errorMessage = error.message || errorMessage;
-        console.error("Error setting up request:", error);
       }
-      
+
       setError(errorMessage);
-      
-      // Auto-hide error after 5 seconds
+
       setTimeout(() => {
         setError("");
       }, 5000);
@@ -506,354 +454,411 @@ const BorrowingList = () => {
   };
 
   return (
-    <div>
-      <div className="level is-mobile mb-5" style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-        <div className="level-left">
-          <div className="level-item">
-            <div>
-              <h1 className="title is-4 has-text-weight-bold" style={{ color: "#2c3e50", marginBottom: "0.25rem" }}>
-                Manajemen Peminjaman
-              </h1>
-              <h2 className="subtitle is-6 has-text-grey" style={{ marginTop: "0" }}>
-                Daftar semua peminjaman barang
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="level-item">
-            <Link 
-              to="/borrowings/add" 
-              className="button is-primary"
-              style={{ borderRadius: "4px" }}
-              onClick={(e) => isLoading && e.preventDefault()}
-            >
-              <span className="icon">
-                <i className="fas fa-plus"></i>
-              </span>
-              <span className="is-hidden-mobile">Tambah Peminjaman</span>
-              <span className="is-hidden-tablet">+</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Section - Sembunyikan saat loading untuk menghindari blink */}
-      {!isLoading && allBorrowings.length > 0 && (
-        <div className="box mb-4" style={{ 
-          borderRadius: "4px", 
-          border: "1px solid #e0e0e0",
-          padding: "1rem",
-          opacity: isLoading ? 0 : 1,
-          transition: 'opacity 0.3s ease-in-out'
-        }}>
-        <div className="columns is-mobile is-vcentered">
-          <div className="column is-12-mobile is-6-tablet">
-            <div className="field">
-              <label className="label is-size-7 has-text-weight-semibold">
-                <span className="icon mr-1">
-                  <i className="fas fa-filter"></i>
-                </span>
-                Filter Status
-              </label>
-              <div className="control">
-                <div className="select is-fullwidth">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    style={{ borderRadius: "4px" }}
-                  >
-                    <option value="active">Sedang Dipinjam (Aktif)</option>
-                    <option value="all">Semua Status</option>
-                    <option value="dipinjam">Dipinjam</option>
-                    <option value="dikembalikan">Dikembalikan</option>
-                    <option value="terlambat">Terlambat</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="column is-12-mobile is-6-tablet">
-            <div className="field">
-              <label className="label is-size-7 has-text-weight-semibold">
-                <span className="icon mr-1">
-                  <i className="fas fa-search"></i>
-                </span>
-                Cari Peminjaman
-              </label>
-              <div className="control has-icons-left">
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Cari berdasarkan produk, peminjam..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ borderRadius: "4px" }}
-                />
-                <span className="icon is-small is-left">
-                  <i className="fas fa-search"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        {(filterStatus !== "active" || searchTerm.trim() !== "") && (
-          <div className="notification is-info is-light mt-3">
-            <button 
-              className="delete" 
-              onClick={() => {
-                setFilterStatus("active");
-                setSearchTerm("");
-              }}
-            ></button>
-            <p className="is-size-7">
-              Menampilkan {borrowings.length} dari {allBorrowings.length} peminjaman
-              {filterStatus !== "active" && filterStatus !== "all" && ` (Status: ${filterStatus})`}
-              {filterStatus === "active" && ` (Hanya yang sedang dipinjam)`}
-              {filterStatus === "all" && ` (Semua status)`}
-              {searchTerm.trim() !== "" && ` (Pencarian: "${searchTerm}")`}
-            </p>
-          </div>
-        )}
-        </div>
-      )}
-
+    <Box sx={{ p: 3 }}>
+      {/* Alerts */}
       {error && (
-        <div className="notification is-danger is-light">
-          <button className="delete" onClick={() => setError("")}></button>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {success && (
-        <div className="notification is-success is-light">
-          <button className="delete" onClick={() => setSuccess("")}></button>
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
           {success}
-        </div>
+        </Alert>
       )}
 
-      {/* Info about borrowed products - Sembunyikan saat loading */}
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+          opacity: isLoading ? 0.5 : 1,
+          transition: "opacity 0.3s",
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Manajemen Peminjaman
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Daftar semua peminjaman barang
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          to="/borrowings/add"
+          variant="contained"
+          startIcon={<AddIcon />}
+          disabled={isLoading}
+          sx={{
+            backgroundColor: "primary.main",
+            "&:hover": {
+              backgroundColor: "primary.dark",
+            },
+          }}
+        >
+          Tambah Peminjaman
+        </Button>
+      </Box>
+
+      {/* Filter Section */}
+      {!isLoading && allBorrowings.length > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            opacity: isLoading ? 0 : 1,
+            transition: "opacity 0.3s",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+            }}
+          >
+            <FormControl fullWidth size="small">
+              <InputLabel>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <FilterListIcon fontSize="small" />
+                  Filter Status
+                </Box>
+              </InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                label="Filter Status"
+              >
+                <MenuItem value="active">Sedang Dipinjam (Aktif)</MenuItem>
+                <MenuItem value="all">Semua Status</MenuItem>
+                <MenuItem value="dipinjam">Dipinjam</MenuItem>
+                <MenuItem value="dikembalikan">Dikembalikan</MenuItem>
+                <MenuItem value="terlambat">Terlambat</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Cari berdasarkan produk, peminjam..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+          {(filterStatus !== "active" || searchTerm.trim() !== "") && (
+            <Alert
+              severity="info"
+              sx={{ mt: 2 }}
+              action={
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setFilterStatus("active");
+                    setSearchTerm("");
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              }
+            >
+              Menampilkan {borrowings.length} dari {allBorrowings.length} peminjaman
+              {filterStatus !== "active" &&
+                filterStatus !== "all" &&
+                ` (Status: ${filterStatus})`}
+              {filterStatus === "active" && ` (Hanya yang sedang dipinjam)`}
+              {filterStatus === "all" && ` (Semua status)`}
+              {searchTerm.trim() !== "" && ` (Pencarian: "${searchTerm}")`}
+            </Alert>
+          )}
+        </Paper>
+      )}
+
+      {/* Info Alert */}
       {!isLoading && (
-        <div className="notification is-warning is-light" style={{ borderRadius: "8px", opacity: isLoading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
-          <div className="is-flex is-align-items-center">
-            <span className="icon mr-3" style={{ fontSize: "1.5rem" }}>
-              <i className="fas fa-exclamation-triangle"></i>
-            </span>
-            <div>
-              <p className="has-text-weight-semibold mb-1">
-                Barang yang sedang dipinjam
-              </p>
-              <p className="is-size-7">
-                Halaman ini menampilkan semua barang yang sedang dipinjam. Barang yang sudah dikembalikan akan hilang dari daftar ini dan kembali muncul di menu{" "}
-                <Link to="/products" className="has-text-weight-semibold" style={{ textDecoration: "underline" }}>
-                  Barang
-                </Link>
-              </p>
-            </div>
-          </div>
-        </div>
+        <Alert
+          severity="info"
+          icon={<WarningIcon />}
+          sx={{
+            mb: 3,
+            opacity: isLoading ? 0 : 1,
+            transition: "opacity 0.3s",
+            backgroundColor: "grey.50",
+            border: "1px solid",
+            borderColor: "grey.200",
+            "& .MuiAlert-icon": {
+              color: "text.secondary",
+            },
+          }}
+        >
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Barang yang sedang dipinjam
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Halaman ini menampilkan semua barang yang sedang dipinjam. Barang yang sudah dikembalikan akan hilang dari daftar ini dan kembali muncul di menu{" "}
+            <Link
+              to="/products"
+              style={{
+                color: "primary.main",
+                textDecoration: "underline",
+                fontWeight: 600,
+              }}
+            >
+              Barang
+            </Link>
+          </Typography>
+        </Alert>
       )}
 
+      {/* Loading State */}
       {isLoading ? (
-        <div className="has-text-centered py-6" style={{ minHeight: "300px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-          <span className="icon is-large mb-4">
-            <i className="fas fa-spinner fa-spin fa-3x has-text-primary"></i>
-          </span>
-          <p className="is-size-5 has-text-weight-semibold mt-3">Memuat data peminjaman...</p>
-          <p className="is-size-7 has-text-grey mt-2">Mohon tunggu sebentar</p>
-        </div>
+        <Paper sx={{ p: 8 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress size={64} sx={{ mb: 3 }} />
+            <Typography variant="h6" fontWeight="semibold" gutterBottom>
+              Memuat data peminjaman...
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Mohon tunggu sebentar
+            </Typography>
+          </Box>
+        </Paper>
       ) : borrowings.length === 0 ? (
-        <div className="notification is-info is-light">
-          <p>Tidak ada peminjaman yang ditemukan.</p>
-        </div>
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="body1" color="text.secondary" align="center">
+            Tidak ada peminjaman yang ditemukan.
+          </Typography>
+        </Paper>
       ) : (
-        <div className="box" style={{ 
-          borderRadius: "4px", 
-          border: "1px solid #e0e0e0",
-          padding: "1rem"
-        }}>
-          <div className="table-container" style={{ overflowX: "auto" }}>
-            <table className="table is-fullwidth" style={{ margin: 0 }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>No</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Produk</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Peminjam</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tanggal Pinjam</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tgl. Kembali (Diharapkan)</th>
-                  <th className="is-hidden-mobile" style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Tgl. Kembali (Aktual)</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Status</th>
-                  <th style={{ fontWeight: "600", color: "#495057", borderBottom: "2px solid #dee2e6" }}>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {borrowings.map((borrowing, index) => (
-                  <tr 
-                    key={borrowing.uuid}
-                    style={{ 
-                      borderBottom: "1px solid #f0f0f0",
-                      transition: "background-color 0.2s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <span className="has-text-weight-semibold has-text-grey">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <div className="is-flex is-align-items-center">
-                        <div 
-                          className="is-flex is-align-items-center is-justify-content-center mr-3"
-                          style={{
-                            width: "48px",
-                            height: "48px",
-                            minWidth: "48px",
-                            borderRadius: "8px",
-                            backgroundColor: borrowing.product?.image ? "transparent" : "#f5f5f5",
-                            border: "2px solid #e0e0e0",
-                            overflow: "hidden",
-                            position: "relative"
+        <TableContainer component={Paper} elevation={2}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "grey.100" }}>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    No
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Produk
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Peminjam
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Tanggal Pinjam
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Tgl. Kembali (Diharapkan)
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Tgl. Kembali (Aktual)
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Status
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Aksi
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {borrowings.map((borrowing, index) => (
+                <TableRow key={borrowing.uuid} hover>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {index + 1}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar
+                        src={borrowing.product?.image}
+                        variant="rounded"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "grey.200",
+                        }}
+                      >
+                        <InventoryIcon />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                          {borrowing.product?.name || "-"}
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: { xs: "block", md: "none" },
+                            mt: 0.5,
                           }}
                         >
-                          {borrowing.product?.image ? (
-                            <img
-                              src={borrowing.product.image}
-                              alt={borrowing.product?.name || "Product"}
-                              style={{
-                                objectFit: "cover",
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: "8px"
-                              }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                const fallback = e.target.parentElement.querySelector('.image-fallback');
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className="image-fallback is-flex is-align-items-center is-justify-content-center"
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: borrowing.product?.image ? "none" : "flex"
+                          <Typography variant="caption" color="text.secondary">
+                            {borrowing.product?.merek || "-"} •{" "}
+                            {borrowing.product?.serialNumber || "-"}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: { xs: "none", md: "flex" },
+                            gap: 1,
+                            mt: 0.5,
+                          }}
+                        >
+                          <Chip
+                            label={borrowing.product?.merek || "-"}
+                            size="small"
+                            sx={{ height: 20, fontSize: "0.7rem" }}
+                          />
+                          <Typography
+                            component="code"
+                            variant="caption"
+                            sx={{
+                              bgcolor: "grey.100",
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 1,
                             }}
                           >
-                            <span className="icon has-text-grey">
-                              <i className="fas fa-box"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <strong style={{ color: "#2c3e50" }}>{borrowing.product?.name || "-"}</strong>
-                          <br className="is-hidden-tablet" />
-                          <span className="is-size-7 has-text-grey is-hidden-tablet">
-                            {borrowing.product?.merek || "-"} • {borrowing.product?.serialNumber || "-"}
-                          </span>
-                          <div className="is-hidden-mobile">
-                            <span className="tag is-primary is-small" style={{ borderRadius: "4px" }}>
-                              {borrowing.product?.merek || "-"}
-                            </span>
-                            <br />
-                            <code className="has-text-info is-size-7" style={{ 
-                              backgroundColor: "#f0f0f0",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "4px"
-                            }}>
-                              {borrowing.product?.serialNumber || "-"}
-                            </code>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "1rem 0.75rem", verticalAlign: "middle" }}>
-                      <strong>{borrowing.namaPeminjam || "-"}</strong>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
-                        {formatDate(borrowing.borrowDate)}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
-                        {formatDate(borrowing.expectedReturnDate)}
-                      </span>
-                    </td>
-                    <td className="is-hidden-mobile" style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <span className="is-size-7 has-text-grey">
-                        {borrowing.actualReturnDate ? formatDate(borrowing.actualReturnDate) : "-"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      {getStatusBadge(borrowing.status)}
-                    </td>
-                    <td style={{ padding: "0.75rem", verticalAlign: "middle" }}>
-                      <div className="buttons are-small is-flex-wrap-wrap">
-                        {borrowing.status !== 'dikembalikan' && canReturnBorrowing(borrowing) && (
-                          <button
+                            {borrowing.product?.serialNumber || "-"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      {borrowing.namaPeminjam || "-"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(borrowing.borrowDate)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(borrowing.expectedReturnDate)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {borrowing.actualReturnDate
+                        ? formatDate(borrowing.actualReturnDate)
+                        : "-"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(borrowing.status)}</TableCell>
+                  <TableCell>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      justifyContent="center"
+                      flexWrap="wrap"
+                    >
+                      {borrowing.status !== "dikembalikan" &&
+                        canReturnBorrowing(borrowing) && (
+                          <IconButton
+                            size="small"
                             onClick={() => openReturnConfirm(borrowing)}
-                            className="button is-success is-light"
                             title="Kembalikan Barang"
-                            style={{ borderRadius: "4px" }}
+                            sx={{
+                              backgroundColor: "grey.100",
+                              color: "text.secondary",
+                              "&:hover": {
+                                backgroundColor: "success.main",
+                                color: "white",
+                              },
+                            }}
                           >
-                            <span className="icon is-small">
-                              <i className="fas fa-undo"></i>
-                            </span>
-                            <span className="is-hidden-mobile">Kembali</span>
-                          </button>
+                            <UndoIcon fontSize="small" />
+                          </IconButton>
                         )}
-                        {borrowing.status !== 'dikembalikan' && !canReturnBorrowing(borrowing) && (
-                          <span 
-                            className="button is-static is-small"
+                      {borrowing.status !== "dikembalikan" &&
+                        !canReturnBorrowing(borrowing) && (
+                          <IconButton
+                            size="small"
+                            disabled
                             title="Hanya peminjam atau admin yang dapat mengembalikan barang"
-                            style={{ borderRadius: "4px", opacity: 0.6 }}
+                            sx={{
+                              opacity: 0.4,
+                              backgroundColor: "grey.100",
+                            }}
                           >
-                            <span className="icon is-small">
-                              <i className="fas fa-lock"></i>
-                            </span>
-                            <span className="is-hidden-mobile">Terkunci</span>
-                          </span>
+                            <LockIcon fontSize="small" />
+                          </IconButton>
                         )}
-                        <Link
-                          to={`/borrowings/edit/${borrowing.uuid}`}
-                          className="button is-info is-light"
-                          title="Edit Peminjaman"
-                          style={{ borderRadius: "4px" }}
-                        >
-                          <span className="icon is-small">
-                            <i className="fas fa-edit"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Edit</span>
-                        </Link>
-                        <button
-                          onClick={() => openDeleteConfirm(borrowing)}
-                          className="button is-danger is-light"
-                          title="Hapus Peminjaman"
-                          style={{ borderRadius: "4px" }}
-                        >
-                          <span className="icon is-small">
-                            <i className="fas fa-trash"></i>
-                          </span>
-                          <span className="is-hidden-mobile">Hapus</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      <IconButton
+                        component={Link}
+                        to={`/borrowings/edit/${borrowing.uuid}`}
+                        size="small"
+                        title="Edit Peminjaman"
+                        sx={{
+                          backgroundColor: "grey.100",
+                          color: "text.secondary",
+                          "&:hover": {
+                            backgroundColor: "primary.main",
+                            color: "white",
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => openDeleteConfirm(borrowing)}
+                        title="Hapus Peminjaman"
+                        sx={{
+                          backgroundColor: "grey.100",
+                          color: "text.secondary",
+                          "&:hover": {
+                            backgroundColor: "error.main",
+                            color: "white",
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -865,23 +870,33 @@ const BorrowingList = () => {
         message={
           borrowingToDelete ? (
             <>
-              Apakah Anda yakin ingin menghapus peminjaman ini?<br />
-              <div className="box mt-3 mb-3" style={{ 
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "1rem"
-              }}>
-                <p className="mb-2">
+              Apakah Anda yakin ingin menghapus peminjaman ini?
+              <br />
+              <Box
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                  p: 2,
+                  bgcolor: "grey.50",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="body2" gutterBottom>
                   <strong>Produk:</strong> {borrowingToDelete.product?.name || "-"}
-                </p>
-                <p className="mb-2">
+                </Typography>
+                <Typography variant="body2" gutterBottom>
                   <strong>Peminjam:</strong> {borrowingToDelete.namaPeminjam || "-"}
-                </p>
-                <p className="mb-0">
-                  <strong>Status:</strong> {getStatusBadge(borrowingToDelete.status)}
-                </p>
-              </div>
-              <span className="tag is-danger is-small">Tindakan ini tidak dapat dibatalkan!</span>
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Status:</strong>{" "}
+                  {getStatusBadge(borrowingToDelete.status)}
+                </Typography>
+              </Box>
+              <Chip
+                label="Tindakan ini tidak dapat dibatalkan!"
+                color="error"
+                size="small"
+              />
             </>
           ) : (
             "Apakah Anda yakin ingin menghapus peminjaman ini? Tindakan ini tidak dapat dibatalkan!"
@@ -891,7 +906,6 @@ const BorrowingList = () => {
         cancelText="Batal"
         type="danger"
         isLoading={isDeleting}
-        icon="fa-trash"
       />
 
       {/* Return Confirmation Modal */}
@@ -903,33 +917,49 @@ const BorrowingList = () => {
         message={
           borrowingToReturn ? (
             <>
-              Apakah Anda yakin ingin mengembalikan barang ini?<br />
-              {(!borrowingToReturn.uuid || borrowingToReturn.uuid.startsWith('temp-')) && (
-                <div className="notification is-warning is-light mt-2 mb-2" style={{ borderRadius: "8px" }}>
-                  <p className="is-size-7">
-                    <i className="fas fa-exclamation-triangle mr-2"></i>
+              Apakah Anda yakin ingin mengembalikan barang ini?
+              <br />
+              {(!borrowingToReturn.uuid ||
+                borrowingToReturn.uuid.startsWith("temp-")) && (
+                <Alert
+                  severity="info"
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    backgroundColor: "grey.50",
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
                     <strong>Catatan:</strong> UUID akan dicari otomatis dari database saat proses pengembalian.
-                  </p>
-                </div>
+                  </Typography>
+                </Alert>
               )}
-              <div className="box mt-3 mb-3" style={{ 
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "1rem"
-              }}>
-                <p className="mb-2">
+              <Box
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                  p: 2,
+                  bgcolor: "grey.50",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="body2" gutterBottom>
                   <strong>Produk:</strong> {borrowingToReturn.product?.name || "-"}
-                </p>
-                <p className="mb-2">
+                </Typography>
+                <Typography variant="body2" gutterBottom>
                   <strong>Peminjam:</strong> {borrowingToReturn.namaPeminjam || "-"}
-                </p>
-                <p className="mb-2">
-                  <strong>Tanggal Pinjam:</strong> {formatDate(borrowingToReturn.borrowDate)}
-                </p>
-                <p className="mb-0">
-                  <strong>Tanggal Kembali Diharapkan:</strong> {formatDate(borrowingToReturn.expectedReturnDate)}
-                </p>
-              </div>
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Tanggal Pinjam:</strong>{" "}
+                  {formatDate(borrowingToReturn.borrowDate)}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Tanggal Kembali Diharapkan:</strong>{" "}
+                  {formatDate(borrowingToReturn.expectedReturnDate)}
+                </Typography>
+              </Box>
             </>
           ) : (
             "Apakah Anda yakin ingin mengembalikan barang ini?"
@@ -939,11 +969,9 @@ const BorrowingList = () => {
         cancelText="Batal"
         type="success"
         isLoading={isReturning}
-        icon="fa-check-circle"
       />
-    </div>
+    </Box>
   );
 };
 
 export default BorrowingList;
-

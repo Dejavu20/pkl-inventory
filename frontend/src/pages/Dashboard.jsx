@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Layout from "./Layout";
 import Welcome from "../components/Welcome";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { getMe } from "../features/authSlice";
 import axios from "axios";
 import API_BASE_URL from "../config/api.js";
+import { Box, Grid, Card, CardContent, Typography, Link as MuiLink } from "@mui/material";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -24,13 +25,7 @@ const Dashboard = () => {
     }
   }, [isError, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-    }
-  }, [user]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setIsLoading(true);
       const productStats = await axios.get(`${API_BASE_URL}/products/stats`);
@@ -40,35 +35,55 @@ const Dashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user, fetchStats]);
 
   return (
     <Layout>
-      <div style={{ padding: "0.5rem" }}>
+      <Box sx={{ p: 3 }}>
         <Welcome />
-        
+
         {!isLoading && stats && (
-          <div className="columns is-mobile is-multiline mt-4">
-            <div className="column is-6-mobile is-3-tablet">
-              <div className="box" style={{ padding: "1rem", borderRadius: "4px", border: "1px solid #e0e0e0" }}>
-                <p className="is-size-7 has-text-grey mb-1">Total Barang</p>
-                <p className="title is-5 has-text-weight-bold" style={{ color: "#2c3e50", margin: 0 }}>
-                  {stats.totalProducts}
-                </p>
-                <Link to="/products" className="is-size-7 has-text-primary">Lihat detail →</Link>
-              </div>
-            </div>
-            <div className="column is-6-mobile is-3-tablet">
-              <div className="box" style={{ padding: "1rem", borderRadius: "4px", border: "1px solid #e0e0e0" }}>
-                <p className="is-size-7 has-text-grey mb-1">Total Pengguna</p>
-                <p className="title is-5 has-text-weight-bold" style={{ color: "#2c3e50", margin: 0 }}>
-                  {stats.totalUsers}
-                </p>
-              </div>
-            </div>
-          </div>
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={2}>
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary" gutterBottom>
+                    Total Barang
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold" gutterBottom>
+                    {stats.totalProducts}
+                  </Typography>
+                  <MuiLink
+                    component={Link}
+                    to="/products"
+                    sx={{ fontSize: "0.75rem", textDecoration: "none" }}
+                  >
+                    Lihat detail →
+                  </MuiLink>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={2}>
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary" gutterBottom>
+                    Total Pengguna
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {stats.totalUsers}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         )}
-      </div>
+      </Box>
     </Layout>
   );
 };

@@ -22,9 +22,7 @@ const BorrowingHistory = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "0.5rem" }}>
-        <BorrowingHistoryList />
-      </div>
+      <BorrowingHistoryList />
     </Layout>
   );
 };

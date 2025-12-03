@@ -2,6 +2,29 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import API_BASE_URL from "../config/api.js";
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  InputAdornment,
+  CircularProgress,
+  Container,
+  Stack,
+} from "@mui/material";
+import {
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon,
+} from "@mui/icons-material";
 
 const FormEditUser = () => {
   const [name, setName] = useState("");
@@ -42,14 +65,12 @@ const FormEditUser = () => {
     setMsg("");
     setIsLoading(true);
 
-    // Validation
     if (!name || !email || !role) {
       setMsg("Nama, Email, dan Role harus diisi");
       setIsLoading(false);
       return;
     }
 
-    // Only validate password if it's provided
     if (password || confPassword) {
       if (password !== confPassword) {
         setMsg("Password dan Konfirmasi Password tidak cocok");
@@ -82,220 +103,173 @@ const FormEditUser = () => {
       setIsLoading(false);
     }
   };
+
   if (isFetching) {
     return (
-      <div className="container">
-        <div className="has-text-centered py-6">
-          <span className="icon is-large">
-            <i className="fas fa-spinner fa-spin fa-2x"></i>
-          </span>
-          <p className="mt-3">Memuat data user...</p>
-        </div>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8 }}>
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Memuat data user...
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div style={{ padding: "0.75rem" }}>
-      <div className="level is-mobile mb-5">
-        <div className="level-left">
-          <div className="level-item">
-            <div>
-              <h1 className="title is-3 has-text-weight-bold" style={{ color: "#2c3e50" }}>
-                Edit User
-              </h1>
-              <h2 className="subtitle is-6 has-text-grey">
-                Update informasi user
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="level-right">
-          <div className="level-item">
-            <Link 
-              to="/users" 
-              className="button is-light"
-              style={{ borderRadius: "8px" }}
-            >
-              <span className="icon">
-                <i className="fas fa-arrow-left"></i>
-              </span>
-              <span className="is-hidden-mobile">Kembali</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Edit User
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Update informasi user
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          to="/users"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
+          Kembali
+        </Button>
+      </Box>
 
-      <div className="columns is-centered">
-        <div className="column is-full-mobile is-8-tablet is-6-desktop">
-          <div className="box" style={{
-            borderRadius: "12px",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-            border: "none"
-          }}>
-              <form onSubmit={updateUser}>
-                {msg && (
-                  <div className="notification is-danger is-light" style={{ borderRadius: "8px" }}>
-                    <button
-                      className="delete"
-                      onClick={() => setMsg("")}
-                    ></button>
-                    {msg}
-                  </div>
-                )}
+      <Container maxWidth="md">
+        <Paper elevation={2} sx={{ p: 4 }}>
+          <form onSubmit={updateUser}>
+            {msg && (
+              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setMsg("")}>
+                {msg}
+              </Alert>
+            )}
 
-                <div className="field">
-                  <label className="label has-text-weight-semibold">
-                    Nama <span className="has-text-danger">*</span>
-                  </label>
-                  <div className="control has-icons-left">
-                    <input
-                      type="text"
-                      className="input"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Masukkan nama"
-                      required
-                      style={{
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
-                      }}
-                    />
-                    <span className="icon is-small is-left">
-                      <i className="fas fa-user"></i>
-                    </span>
-                  </div>
-                </div>
+            <TextField
+              fullWidth
+              label="Nama"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Masukkan nama"
+              margin="normal"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-                <div className="field">
-                  <label className="label has-text-weight-semibold">
-                    Email <span className="has-text-danger">*</span>
-                  </label>
-                  <div className="control has-icons-left">
-                    <input
-                      type="email"
-                      className="input"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Masukkan email"
-                      required
-                      style={{
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
-                      }}
-                    />
-                    <span className="icon is-small is-left">
-                      <i className="fas fa-envelope"></i>
-                    </span>
-                  </div>
-                </div>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Masukkan email"
+              margin="normal"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-                <div className="field">
-                  <label className="label has-text-weight-semibold">Password</label>
-                  <div className="control has-icons-left">
-                    <input
-                      type="password"
-                      className="input"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Kosongkan jika tidak ingin mengubah password"
-                      minLength="6"
-                      style={{
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
-                      }}
-                    />
-                    <span className="icon is-small is-left">
-                      <i className="fas fa-lock"></i>
-                    </span>
-                  </div>
-                  <p className="help">
-                    Kosongkan jika tidak ingin mengubah password
-                  </p>
-                </div>
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Kosongkan jika tidak ingin mengubah password"
+              margin="normal"
+              inputProps={{ minLength: 6 }}
+              helperText="Kosongkan jika tidak ingin mengubah password"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-                <div className="field">
-                  <label className="label has-text-weight-semibold">Konfirmasi Password</label>
-                  <div className="control has-icons-left">
-                    <input
-                      type="password"
-                      className="input"
-                      value={confPassword}
-                      onChange={(e) => setConfPassword(e.target.value)}
-                      placeholder="Ulangi password baru"
-                      minLength="6"
-                      style={{
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
-                      }}
-                    />
-                    <span className="icon is-small is-left">
-                      <i className="fas fa-lock"></i>
-                    </span>
-                  </div>
-                </div>
+            <TextField
+              fullWidth
+              label="Konfirmasi Password"
+              type="password"
+              value={confPassword}
+              onChange={(e) => setConfPassword(e.target.value)}
+              placeholder="Ulangi password baru"
+              margin="normal"
+              inputProps={{ minLength: 6 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-                <div className="field">
-                  <label className="label has-text-weight-semibold">
-                    Role <span className="has-text-danger">*</span>
-                  </label>
-                  <div className="control">
-                    <div className="select is-fullwidth">
-                      <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        required
-                        style={{
-                          borderRadius: "8px",
-                          border: "1px solid #e0e0e0"
-                        }}
-                      >
-                        <option value="User">User</option>
-                        <option value="Admin">Admin</option>
-                      </select>
-                    </div>
-                  </div>
-                  <p className="help">
-                    Admin memiliki akses penuh untuk mengelola user
-                  </p>
-                </div>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Role</InputLabel>
+              <Select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                label="Role"
+                required
+              >
+                <MenuItem value="User">User</MenuItem>
+                <MenuItem value="Admin">Admin</MenuItem>
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Admin memiliki akses penuh untuk mengelola user
+              </Typography>
+            </FormControl>
 
-                <div className="field is-grouped mt-5">
-                  <div className="control">
-                    <button
-                      type="submit"
-                      className="button is-primary"
-                      disabled={isLoading}
-                      style={{ borderRadius: "8px" }}
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="icon">
-                            <i className="fas fa-spinner fa-spin"></i>
-                          </span>
-                          <span>Menyimpan...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="icon">
-                            <i className="fas fa-save"></i>
-                          </span>
-                          <span>Update</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="control">
-                    <Link to="/users" className="button is-light" style={{ borderRadius: "8px" }}>
-                      Batal
-                    </Link>
-                  </div>
-                </div>
-              </form>
-          </div>
-        </div>
-      </div>
-    </div>
+            <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                sx={{
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                {isLoading ? "Menyimpan..." : "Update"}
+              </Button>
+              <Button
+                component={Link}
+                to="/users"
+                variant="outlined"
+                disabled={isLoading}
+              >
+                Batal
+              </Button>
+            </Stack>
+          </form>
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 

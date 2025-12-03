@@ -1,110 +1,161 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, reset } from "../features/authSlice";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Box,
+  Chip,
+  Button,
+} from "@mui/material";
+import {
+  Inventory as InventoryIcon,
+  Menu as MenuIcon,
+  AccountCircle,
+  Logout as LogoutIcon,
+  ExpandMore,
+} from "@mui/icons-material";
 
 const Navbar = ({ onMenuClick }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth); 
+  const { user } = useSelector((state) => state.auth);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const logout = () => {
     dispatch(LogOut());
     dispatch(reset());
     navigate("/");
+    setAnchorEl(null);
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   return (
-    <nav
-      className="navbar is-fixed-top has-shadow"
-      role="navigation"
-      aria-label="main navigation"
-      style={{
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        minHeight: "4rem"
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
+        backgroundColor: "#ffffff",
+        borderBottom: 1,
+        borderColor: "divider",
+        color: "text.primary",
+        zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
-      <div className="navbar-brand" style={{ marginLeft: "1rem" }}>
-        <NavLink 
-          to="/dashboard" 
-          className="navbar-item"
-          style={{ 
-            color: "white",
-            fontWeight: "bold",
-            fontSize: "1.25rem",
-            padding: "0.75rem 1rem"
-          }}
-        >
-          <span className="icon mr-2" style={{ color: "white" }}>
-            <i className="fas fa-boxes fa-lg"></i>
-          </span>
-          <span>Inventory System</span>
-        </NavLink>
+      <Toolbar>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexGrow: 1 }}>
+          <NavLink
+            to="/dashboard"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <InventoryIcon sx={{ color: "primary.main" }} />
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600, color: "text.primary" }}>
+                Inventory System
+              </Typography>
+            </Box>
+          </NavLink>
 
-        <a
-          href="!#"
-          role="button"
-          className="navbar-burger"
-          aria-label="menu"
-          aria-expanded="false"
-          onClick={(e) => {
-            e.preventDefault();
-            if (onMenuClick) onMenuClick();
-          }}
-          style={{ color: "white" }}
-        >
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
+          <IconButton
+            aria-label="menu"
+            onClick={onMenuClick}
+            sx={{
+              display: { md: "none" },
+              color: "text.primary",
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Box>
 
-      <div id="navbarBasicExample" className="navbar-menu">
-        <div className="navbar-end" style={{ marginRight: "1rem" }}>
-          {user && user.name && (
-            <div className="navbar-item has-dropdown is-hoverable">
-              <a className="navbar-link" style={{ color: "white" }}>
-                <span className="icon mr-2">
-                  <i className="fas fa-user-circle"></i>
-                </span>
-                <span>{user.name}</span>
-                <span className="tag is-light ml-2" style={{ fontSize: "0.7rem" }}>
-                  {user.role}
-                </span>
-              </a>
-              <div className="navbar-dropdown is-right">
-                <div className="navbar-item">
-                  <div>
-                    <p className="has-text-weight-semibold">{user.name}</p>
-                    <p className="has-text-grey is-size-7">{user.email || "-"}</p>
-                  </div>
-                </div>
-                <hr className="navbar-divider" />
-                <a className="navbar-item" onClick={logout}>
-                  <span className="icon mr-2 has-text-danger">
-                    <i className="fas fa-sign-out-alt"></i>
-                  </span>
-                  <span>Logout</span>
-                </a>
-              </div>
-            </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {user && user.name ? (
+            <>
+              <Button
+                onClick={handleMenuOpen}
+                startIcon={<AccountCircle sx={{ color: "text.secondary" }} />}
+                endIcon={<ExpandMore sx={{ color: "text.secondary" }} />}
+                sx={{
+                  textTransform: "none",
+                  color: "text.primary",
+                  "&:hover": {
+                    backgroundColor: "grey.100",
+                  },
+                }}
+              >
+                {user.name}
+                <Chip
+                  label={user.role}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    backgroundColor: "grey.100",
+                    color: "text.secondary",
+                    fontSize: "0.7rem",
+                    height: 20,
+                    fontWeight: 500,
+                  }}
+                />
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+              >
+                <MenuItem disabled>
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {user.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {user.email || "-"}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem onClick={logout} sx={{ color: "error.main" }}>
+                  <LogoutIcon sx={{ mr: 1 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button
+              onClick={logout}
+              startIcon={<LogoutIcon />}
+              sx={{
+                color: "text.primary",
+                backgroundColor: "grey.100",
+                "&:hover": {
+                  backgroundColor: "grey.200",
+                },
+              }}
+            >
+              Logout
+            </Button>
           )}
-
-          {!user && (
-            <div className="navbar-item">
-              <div className="buttons">
-                <button onClick={logout} className="button is-light">
-                  <span className="icon">
-                    <i className="fas fa-sign-out-alt"></i>
-                  </span>
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </nav>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };
 

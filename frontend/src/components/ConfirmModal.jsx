@@ -1,4 +1,24 @@
 import React from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from "@mui/material";
+import {
+  Info as InfoIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  Check as CheckIcon,
+} from "@mui/icons-material";
 
 const ConfirmModal = ({
   isOpen,
@@ -10,168 +30,113 @@ const ConfirmModal = ({
   cancelText = "Batal",
   type = "info", // info, success, warning, danger
   isLoading = false,
-  icon = null
+  icon = null,
 }) => {
-  if (!isOpen) return null;
-
-  const typeConfig = {
-    info: {
-      color: "#3273dc",
-      icon: icon || "fa-info-circle",
-      bgColor: "#e8f4f8"
-    },
-    success: {
-      color: "#48c774",
-      icon: icon || "fa-check-circle",
-      bgColor: "#effaf3"
-    },
-    warning: {
-      color: "#ffdd57",
-      icon: icon || "fa-exclamation-triangle",
-      bgColor: "#fffbf0"
-    },
-    danger: {
-      color: "#f14668",
-      icon: icon || "fa-exclamation-circle",
-      bgColor: "#feecf0"
+  const getIcon = () => {
+    if (icon) return icon;
+    switch (type) {
+      case "success":
+        return <CheckCircleIcon sx={{ fontSize: 60 }} />;
+      case "warning":
+        return <WarningIcon sx={{ fontSize: 60 }} />;
+      case "danger":
+        return <ErrorIcon sx={{ fontSize: 60 }} />;
+      default:
+        return <InfoIcon sx={{ fontSize: 60 }} />;
     }
   };
 
-  const config = typeConfig[type] || typeConfig.info;
+  const getColor = () => {
+    switch (type) {
+      case "success":
+        return "success";
+      case "warning":
+        return "info"; // Use info color for softer warning
+      case "danger":
+        return "error";
+      default:
+        return "info";
+    }
+  };
+
+  const getConfirmIcon = () => {
+    if (type === "danger") return <DeleteIcon />;
+    if (type === "success") return <CheckIcon />;
+    return <CheckCircleIcon />;
+  };
 
   return (
-    <div className="modal is-active" style={{ zIndex: 9999 }}>
-      <div 
-        className="modal-background" 
-        onClick={!isLoading ? onClose : undefined}
-        style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
-      ></div>
-      <div className="modal-content" style={{ maxWidth: "500px", margin: "0 1rem" }}>
-        <div 
-          className="box" 
-          style={{ 
-            borderRadius: "16px", 
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-            border: "none",
-            padding: "2rem",
-            animation: "modalSlideIn 0.3s ease-out"
-          }}
-        >
-          <style>
-            {`
-              @keyframes modalSlideIn {
-                from {
-                  transform: scale(0.9) translateY(-20px);
-                  opacity: 0;
-                }
-                to {
-                  transform: scale(1) translateY(0);
-                  opacity: 1;
-                }
-              }
-            `}
-          </style>
-
-          {/* Header */}
-          <div className="has-text-centered mb-4">
-            <div 
-              className="icon is-large mb-3"
-              style={{ 
-                color: config.color,
-                fontSize: "3.5rem"
+    <Dialog
+      open={isOpen}
+      onClose={!isLoading ? onClose : undefined}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+        },
+      }}
+    >
+      <DialogTitle>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                color:
+                  type === "warning"
+                    ? "text.secondary"
+                    : `${getColor()}.main`,
               }}
             >
-              <i className={`fas ${config.icon} fa-3x`}></i>
-            </div>
-            <h2 
-              className="title is-4 has-text-weight-bold" 
-              style={{ color: "#2c3e50", marginBottom: "0.5rem" }}
-            >
+              {getIcon()}
+            </Box>
+            <Typography variant="h6" component="div">
               {title}
-            </h2>
-            {message && (
-              <p 
-                className="subtitle is-6" 
-                style={{ color: "#6c757d", marginTop: "0.5rem" }}
-              >
-                {message}
-              </p>
-            )}
-          </div>
-
-          {/* Content */}
-          <div 
-            className="notification is-light mb-4" 
-            style={{ 
-              borderRadius: "12px",
-              backgroundColor: config.bgColor,
-              border: `1px solid ${config.color}20`
-            }}
-          >
-            <div className="content">
-              {typeof message === 'string' ? (
-                <p className="has-text-centered" style={{ margin: 0 }}>
-                  {message}
-                </p>
-              ) : (
-                message
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="buttons is-centered" style={{ marginTop: "1.5rem" }}>
-            <button
-              className="button is-light"
+            </Typography>
+          </Box>
+          {!isLoading && (
+            <IconButton
+              edge="end"
+              color="inherit"
               onClick={onClose}
-              disabled={isLoading}
-              style={{ 
-                borderRadius: "8px",
-                minWidth: "120px",
-                border: "1px solid #e0e0e0"
-              }}
+              aria-label="close"
             >
-              <span>{cancelText}</span>
-            </button>
-            <button
-              className={`button ${type === 'danger' ? 'is-danger' : type === 'warning' ? 'is-warning' : type === 'success' ? 'is-success' : 'is-primary'}`}
-              onClick={onConfirm}
-              disabled={isLoading}
-              style={{ 
-                borderRadius: "8px",
-                minWidth: "120px",
-                boxShadow: `0 4px 12px ${config.color}40`
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <span className="icon is-small">
-                    <i className="fas fa-spinner fa-spin"></i>
-                  </span>
-                  <span>Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <span className="icon is-small">
-                    <i className={`fas ${type === 'danger' ? 'fa-trash' : type === 'success' ? 'fa-check' : 'fa-check-circle'}`}></i>
-                  </span>
-                  <span>{confirmText}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-      <button
-        className="modal-close is-large"
-        aria-label="close"
-        onClick={!isLoading ? onClose : undefined}
-        disabled={isLoading}
-        style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
-      ></button>
-    </div>
+              <CloseIcon />
+            </IconButton>
+          )}
+        </Box>
+      </DialogTitle>
+
+      <DialogContent>
+        {typeof message === "string" ? (
+          <Typography>{message}</Typography>
+        ) : (
+          message
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} disabled={isLoading} variant="outlined">
+          {cancelText}
+        </Button>
+        <Button
+          onClick={onConfirm}
+          disabled={isLoading}
+          variant="contained"
+          color={getColor()}
+          startIcon={
+            isLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              getConfirmIcon()
+            )
+          }
+        >
+          {isLoading ? "Memproses..." : confirmText}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
 export default ConfirmModal;
-

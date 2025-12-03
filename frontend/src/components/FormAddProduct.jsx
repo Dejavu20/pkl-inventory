@@ -1,7 +1,30 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import API_BASE_URL from "../config/api.js";
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Container,
+  Stack,
+  Avatar,
+  IconButton,
+} from "@mui/material";
+import {
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
+} from "@mui/icons-material";
 
 const FormAddProduct = () => {
   const [name, setName] = useState("");
@@ -34,21 +57,18 @@ const FormAddProduct = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         setMsg("File harus berupa gambar");
         return;
       }
-      
-      // Validate file size (max 5MB)
+
       if (file.size > 5 * 1024 * 1024) {
         setMsg("Ukuran file maksimal 5MB");
         return;
       }
-      
+
       setImage(file);
-      
-      // Create preview
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -76,23 +96,26 @@ const FormAddProduct = () => {
     e.preventDefault();
     setMsg("");
     setIsSaving(true);
-    
+
     try {
       let imageBase64 = null;
-      
-      // Convert image to base64 if exists
+
       if (image) {
         imageBase64 = await convertImageToBase64(image);
       }
-      
-      await axios.post(`${API_BASE_URL}/products`, {
-        name: name.trim(),
-        merek: merek.trim(),
-        kategori: kategori && kategori !== "all" ? kategori.trim() : null,
-        image: imageBase64,
-      }, {
-        withCredentials: true
-      });
+
+      await axios.post(
+        `${API_BASE_URL}/products`,
+        {
+          name: name.trim(),
+          merek: merek.trim(),
+          kategori: kategori && kategori !== "all" ? kategori.trim() : null,
+          image: imageBase64,
+        },
+        {
+          withCredentials: true,
+        }
+      );
       navigate("/products");
     } catch (error) {
       if (error.response) {
@@ -106,176 +129,186 @@ const FormAddProduct = () => {
   };
 
   return (
-    <div>
-      <h1 className="title">Products</h1>
-      <h2 className="subtitle">Add New Product</h2>
-      <div className="card is-shadowless">
-        <div className="card-content">
-          <div className="content">
-            <form onSubmit={saveProduct}>
-              {msg && (
-                <div className="notification is-danger is-light">
-                  <button className="delete" onClick={() => setMsg("")}></button>
-                  {msg}
-                </div>
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+            Tambah Produk Baru
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Tambah produk baru ke dalam sistem
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          to="/products"
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+        >
+          Kembali
+        </Button>
+      </Box>
+
+      <Container maxWidth="md">
+        <Paper elevation={2} sx={{ p: 4 }}>
+          <form onSubmit={saveProduct}>
+            {msg && (
+              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setMsg("")}>
+                {msg}
+              </Alert>
+            )}
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              <Typography variant="caption">
+                <strong>Catatan:</strong> Produk baru akan otomatis diset sebagai{" "}
+                <strong>"Tersedia"</strong> dan Serial Number akan otomatis dibuat.
+              </Typography>
+            </Alert>
+
+            <TextField
+              fullWidth
+              label="Nama Produk"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Masukkan nama produk"
+              margin="normal"
+            />
+
+            <TextField
+              fullWidth
+              label="Merek"
+              required
+              value={merek}
+              onChange={(e) => setMerek(e.target.value)}
+              placeholder="Masukkan merek produk"
+              margin="normal"
+            />
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Kategori</InputLabel>
+              <Select
+                value={kategori}
+                onChange={(e) => setKategori(e.target.value)}
+                label="Kategori"
+              >
+                <MenuItem value="">Pilih Kategori (Opsional)</MenuItem>
+                {isLoadingCategories ? (
+                  <MenuItem disabled>Memuat kategori...</MenuItem>
+                ) : (
+                  categories.map((category) => (
+                    <MenuItem key={category.uuid} value={category.name}>
+                      {category.name}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Pilih kategori untuk produk ini (opsional)
+              </Typography>
+            </FormControl>
+
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                Foto Produk
+              </Typography>
+              {!imagePreview ? (
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<ImageIcon />}
+                  sx={{ mt: 1 }}
+                >
+                  Pilih Foto
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </Button>
+              ) : (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mt: 2,
+                    p: 2,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Avatar
+                    src={imagePreview}
+                    alt="Preview"
+                    variant="rounded"
+                    sx={{ width: 128, height: 128 }}
+                  />
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {image?.name || "Preview"}
+                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                      <IconButton
+                        color="error"
+                        size="small"
+                        onClick={removeImage}
+                        sx={{ mr: 1 }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                      <Typography variant="caption" component="span">
+                        Hapus Foto
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
               )}
-              <div className="notification is-info is-light">
-                <p className="is-size-7">
-                  <strong>Catatan:</strong> Produk baru akan otomatis diset sebagai <strong>"Tersedia"</strong> dan Serial Number akan otomatis dibuat.
-                </p>
-              </div>
-              <div className="field">
-                <label className="label">Nama Produk <span className="has-text-danger">*</span></label>
-                <div className="control">
-                  <input
-                    type="text"
-                    className="input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Masukkan nama produk"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label className="label">Merek <span className="has-text-danger">*</span></label>
-                <div className="control">
-                  <input
-                    type="text"
-                    className="input"
-                    value={merek}
-                    onChange={(e) => setMerek(e.target.value)}
-                    placeholder="Masukkan merek produk"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label className="label">Kategori</label>
-                <div className="control">
-                  <div className="select is-fullwidth">
-                    <select
-                      value={kategori}
-                      onChange={(e) => setKategori(e.target.value)}
-                      className="input"
-                      style={{ width: "100%", borderRadius: "4px" }}
-                    >
-                      <option value="">Pilih Kategori (Opsional)</option>
-                      {isLoadingCategories ? (
-                        <option disabled>Memuat kategori...</option>
-                      ) : (
-                        categories.map((category) => (
-                          <option key={category.uuid} value={category.name}>
-                            {category.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                </div>
-                <p className="help">Pilih kategori untuk produk ini (opsional)</p>
-              </div>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                Upload foto produk (opsional, maksimal 5MB)
+              </Typography>
+            </Box>
 
-              <div className="field">
-                <label className="label">Foto Produk</label>
-                <div className="control">
-                  {!imagePreview ? (
-                    <div className="file has-name is-fullwidth">
-                      <label className="file-label">
-                        <input
-                          className="file-input"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                        <span className="file-cta">
-                          <span className="file-icon">
-                            <i className="fas fa-upload"></i>
-                          </span>
-                          <span className="file-label">Pilih Foto</span>
-                        </span>
-                        <span className="file-name">Tidak ada file dipilih</span>
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="box" style={{ padding: "1rem", borderRadius: "8px" }}>
-                      <div className="is-flex is-align-items-center">
-                        <figure className="image is-128x128 mr-3" style={{ margin: 0 }}>
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            style={{
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                              width: "100%",
-                              height: "100%"
-                            }}
-                          />
-                        </figure>
-                        <div className="is-flex-grow-1">
-                          <p className="is-size-7 has-text-grey mb-2">
-                            {image?.name || "Preview"}
-                          </p>
-                          <button
-                            type="button"
-                            className="button is-danger is-small"
-                            onClick={removeImage}
-                            style={{ borderRadius: "4px" }}
-                          >
-                            <span className="icon is-small">
-                              <i className="fas fa-trash"></i>
-                            </span>
-                            <span>Hapus Foto</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="help">Upload foto produk (opsional, maksimal 5MB)</p>
-              </div>
-
-              <div className="field is-grouped">
-                <div className="control">
-                  <button 
-                    type="submit" 
-                    className="button is-success" 
-                    style={{ borderRadius: "4px" }}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <span className="icon">
-                          <i className="fas fa-spinner fa-spin"></i>
-                        </span>
-                        <span>Menyimpan...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="icon">
-                          <i className="fas fa-save"></i>
-                        </span>
-                        <span>Simpan</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="control">
-                  <button
-                    type="button"
-                    className="button is-light"
-                    onClick={() => navigate("/products")}
-                    style={{ borderRadius: "4px" }}
-                  >
-                    Batal
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+            <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="success"
+                disabled={isSaving}
+                startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />}
+                sx={{
+                  backgroundColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                {isSaving ? "Menyimpan..." : "Simpan"}
+              </Button>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => navigate("/products")}
+                disabled={isSaving}
+              >
+                Batal
+              </Button>
+            </Stack>
+          </form>
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 
